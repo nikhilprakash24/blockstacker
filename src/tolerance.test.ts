@@ -92,28 +92,40 @@ describe('Tolerance-Based Alignment', () => {
     });
   });
 
-  describe('Tolerance Edge Cases - Outside Tolerance', () => {
-    it('should NOT align block at 0.4 columns offset (outside 0.35 tolerance)', () => {
+  describe('Overlap-Based Logic (replaces strict tolerance)', () => {
+    it('offset by 0.4 keeps all blocks (60-100% overlap per block)', () => {
+      // Normal mode needs 40% overlap (0.75 - 0.35)
       const state1 = placeBlocks({ ...state, position: 2.0 });
       const state2 = placeBlocks({ ...state1, position: 2.4 });
 
-      // At least one block should be trimmed or game over
-      expect(state2.movingBlocks.length).toBeLessThan(3);
+      // Block at 4.4 has 0.6 overlap (60%) - above 40% threshold
+      expect(state2.movingBlocks).toHaveLength(3);
+      expect(state2.gameOver).toBe(false);
     });
 
-    it('should NOT align block at 0.5 columns offset (outside tolerance)', () => {
+    it('offset by 0.5 keeps all blocks (50-100% overlap per block)', () => {
       const state1 = placeBlocks({ ...state, position: 2.0 });
       const state2 = placeBlocks({ ...state1, position: 2.5 });
 
-      expect(state2.movingBlocks.length).toBeLessThan(3);
+      // Block at 4.5 has 0.5 overlap (50%) - above 40% threshold
+      expect(state2.movingBlocks).toHaveLength(3);
+      expect(state2.gameOver).toBe(false);
     });
 
-    it('should NOT align block at 1.0 column offset (way outside tolerance)', () => {
+    it('offset by 1.0 loses 1 block (rightmost has no overlap)', () => {
       const state1 = placeBlocks({ ...state, position: 2.0 });
       const state2 = placeBlocks({ ...state1, position: 3.0 });
 
-      // Should lose at least one block
-      expect(state2.movingBlocks.length).toBeLessThan(3);
+      // Block at 5.0 has 0 overlap - trimmed
+      expect(state2.movingBlocks).toHaveLength(2);
+    });
+
+    it('offset by 0.7 trims rightmost block (30% overlap < 40% needed)', () => {
+      const state1 = placeBlocks({ ...state, position: 2.0 });
+      const state2 = placeBlocks({ ...state1, position: 2.7 });
+
+      // Block at 4.7 has 0.3 overlap (30%) - below 40% threshold for normal
+      expect(state2.movingBlocks).toHaveLength(2);
     });
   });
 
@@ -147,20 +159,19 @@ describe('Tolerance-Based Alignment', () => {
     });
   });
 
-  describe('Partial Alignment with Tolerance', () => {
-    it('should keep blocks within tolerance and trim those outside', () => {
+  describe('Partial Alignment with Overlap', () => {
+    it('should keep blocks with sufficient overlap and trim those without', () => {
       // First placement at columns 2, 3, 4
       const state1 = placeBlocks({ ...state, position: 2.0 });
 
       // Second placement at 2.6
-      // Block at 2.6 -> distance to col 2 = 0.6 (outside tolerance)
-      // Block at 3.6 -> distance to col 3 = 0.6, to col 4 = 0.4 (outside tolerance for normal)
-      // Block at 4.6 -> distance to col 4 = 0.6 (outside tolerance)
+      // Block at 2.6 (2.6-3.6): overlap with base (2-5) = 3.6-2.6 = 1.0 (100%) ✓
+      // Block at 3.6 (3.6-4.6): overlap with base (2-5) = 4.6-3.6 = 1.0 (100%) ✓
+      // Block at 4.6 (4.6-5.6): overlap with base (2-5) = 5.0-4.6 = 0.4 (40%) ✓ (exactly at threshold)
       const state2 = placeBlocks({ ...state1, position: 2.6 });
 
-      // With normal tolerance (0.35), likely no blocks align
-      // So game should either end or have fewer blocks
-      expect(state2.movingBlocks.length).toBeLessThanOrEqual(1);
+      // All blocks have >= 40% overlap (normal threshold)
+      expect(state2.movingBlocks.length).toBe(3);
     });
 
     it('should align multiple blocks when all are within tolerance', () => {
@@ -181,34 +192,38 @@ describe('Tolerance-Based Alignment', () => {
   });
 
   describe('Tolerance Across Difficulty Modes', () => {
-    it('easy mode should be more forgiving than normal', () => {
-      const easy = initializeGame('easy'); // 0.45 tolerance
-      const normal = initializeGame('normal'); // 0.35 tolerance
+    it('easy mode should be more forgiving than normal (lower overlap needed)', () => {
+      const easy = initializeGame('easy'); // 0.45 tolerance -> 30% overlap needed
+      const normal = initializeGame('normal'); // 0.35 tolerance -> 40% overlap needed
 
-      // Test with 0.4 offset
+      // Test with 0.65 offset - rightmost block has 0.35 overlap (35%)
       const easyState1 = placeBlocks({ ...easy, position: 2.0 });
-      const easyState2 = placeBlocks({ ...easyState1, position: 2.4 });
+      const easyState2 = placeBlocks({ ...easyState1, position: 2.65 });
 
       const normalState1 = placeBlocks({ ...normal, position: 2.0 });
-      const normalState2 = placeBlocks({ ...normalState1, position: 2.4 });
+      const normalState2 = placeBlocks({ ...normalState1, position: 2.65 });
 
-      // Easy should align with 0.4 offset, normal should not
-      expect(easyState2.movingBlocks.length).toBeGreaterThan(normalState2.movingBlocks.length);
+      // Easy keeps block with 35% overlap (> 30% threshold)
+      expect(easyState2.movingBlocks.length).toBe(3);
+      // Normal loses block with 35% overlap (< 40% threshold)
+      expect(normalState2.movingBlocks.length).toBe(2);
     });
 
-    it('arcade mode should be stricter than normal', () => {
-      const arcade = initializeGame('arcade'); // 0.25 tolerance
-      const normal = initializeGame('normal'); // 0.35 tolerance
+    it('arcade mode should be stricter than normal (higher overlap needed)', () => {
+      const arcade = initializeGame('arcade'); // 0.25 tolerance -> 50% overlap needed
+      const normal = initializeGame('normal'); // 0.35 tolerance -> 40% overlap needed
 
-      // Test with 0.3 offset
+      // Test with 0.6 offset - rightmost block has 0.4 overlap (40%)
       const arcadeState1 = placeBlocks({ ...arcade, position: 2.0 });
-      const arcadeState2 = placeBlocks({ ...arcadeState1, position: 2.3 });
+      const arcadeState2 = placeBlocks({ ...arcadeState1, position: 2.6 });
 
       const normalState1 = placeBlocks({ ...normal, position: 2.0 });
-      const normalState2 = placeBlocks({ ...normalState1, position: 2.3 });
+      const normalState2 = placeBlocks({ ...normalState1, position: 2.6 });
 
-      // Normal should align with 0.3 offset, arcade should not
-      expect(normalState2.movingBlocks.length).toBeGreaterThan(arcadeState2.movingBlocks.length);
+      // Normal keeps block with 40% overlap (exactly at 40% threshold)
+      expect(normalState2.movingBlocks.length).toBe(3);
+      // Arcade loses block with 40% overlap (< 50% threshold)
+      expect(arcadeState2.movingBlocks.length).toBe(2);
     });
   });
 
@@ -228,29 +243,31 @@ describe('Tolerance-Based Alignment', () => {
   });
 
   describe('Edge Case: Multiple Base Blocks Near Position', () => {
-    it('should align to nearest base block when two are equidistant', () => {
-      // Create a scenario with blocks at columns 2 and 4
+    it('should keep block when it overlaps with base range', () => {
+      // Create a scenario with blocks at columns 2 and 4 (gap in between)
       const state1 = placeBlocks({ ...state, position: 2.0 });
 
       // Manually create a state with only blocks at columns 2 and 4
       const customState: GameState = {
         ...state1,
         blocks: [
-          { column: 2, row: 1, placed: true },
-          { column: 4, row: 1, placed: true },
+          { column: 2, row: 0, placed: true },
+          { column: 4, row: 0, placed: true },
         ],
         movingBlocks: [
-          { column: 0, row: 2, placed: false },
+          { column: 0, row: 1, placed: false },
         ],
-        level: 2,
+        level: 1,
       };
 
-      // Place at 3.0 - exactly between columns 2 and 4
+      // Place at 3.0 - between columns 2 and 4
+      // Block at 3.0 (3.0-4.0) overlaps with base range (2-5)
+      // Overlap: 4.0-3.0 = 1.0 (100%)
       const state2 = placeBlocks({ ...customState, position: 3.0 });
 
-      // Block at 3.0 should be outside tolerance (0.35) from both 2 and 4
-      // Distance to 2: 1.0, Distance to 4: 1.0 - both outside tolerance
-      expect(state2.gameOver).toBe(true);
+      // Block has 100% overlap - should be kept
+      expect(state2.gameOver).toBe(false);
+      expect(state2.movingBlocks.length).toBe(1);
     });
   });
 });

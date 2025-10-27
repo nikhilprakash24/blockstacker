@@ -33,7 +33,8 @@ export function updatePosition(state: GameState, deltaTime: number): GameState {
   };
 }
 
-// Check alignment between moving blocks and placed blocks with tolerance
+// Check alignment between moving blocks and placed blocks using overlap logic
+// Blocks move as a UNIT, and we calculate overlap between the moving unit and base unit
 function checkAlignment(
   movingBlocks: Block[],
   placedBlocks: Block[],
@@ -54,32 +55,49 @@ function checkAlignment(
     };
   }
 
-  // Check which moving blocks align with base blocks (with tolerance)
+  // Calculate the continuous range occupied by base blocks
+  // Each block at column X occupies the range [X, X+1)
+  const baseColumns = baseBlocks.map(b => b.column);
+  const baseMin = Math.min(...baseColumns);
+  const baseMax = Math.max(...baseColumns) + 1; // +1 because block extends to next column
+
+  // Check each moving block based on overlap with base range
   const aligned: Block[] = [];
   const trimmed: Block[] = [];
 
   movingBlocks.forEach(movingBlock => {
-    // Find the nearest base block within tolerance
-    let nearestBaseBlock: Block | null = null;
-    let minDistance = Infinity;
+    // Calculate the range this moving block occupies
+    const blockStart = movingBlock.column;
+    const blockEnd = movingBlock.column + 1;
 
-    baseBlocks.forEach(baseBlock => {
-      const distance = Math.abs(baseBlock.column - movingBlock.column);
-      if (distance <= tolerance && distance < minDistance) {
-        minDistance = distance;
-        nearestBaseBlock = baseBlock;
-      }
-    });
+    // Calculate overlap between this block and the base range
+    const overlapStart = Math.max(blockStart, baseMin);
+    const overlapEnd = Math.min(blockEnd, baseMax);
+    const overlapWidth = Math.max(0, overlapEnd - overlapStart);
 
-    if (nearestBaseBlock !== null) {
-      // Snap to the base block's column
+    // Tolerance affects the minimum overlap required
+    // Higher tolerance = lower overlap needed
+    // tolerance 0.45 (easy) -> need 0.3 overlap (30%)
+    // tolerance 0.35 (normal) -> need 0.4 overlap (40%)
+    // tolerance 0.25 (arcade) -> need 0.5 overlap (50%)
+    const minOverlapRequired = 0.75 - tolerance;
+
+    if (overlapWidth >= minOverlapRequired) {
+      // Block has sufficient support - find nearest base block to snap to
+      const nearestBase = baseBlocks.reduce((nearest, base) => {
+        const distToNearest = Math.abs(nearest.column - movingBlock.column);
+        const distToBase = Math.abs(base.column - movingBlock.column);
+        return distToBase < distToNearest ? base : nearest;
+      });
+
       aligned.push({
         ...movingBlock,
-        column: nearestBaseBlock.column,
+        column: nearestBase.column,
         placed: true,
         row: currentRow
       });
     } else {
+      // Block overhangs too much - trim it
       trimmed.push(movingBlock);
     }
   });
