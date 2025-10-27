@@ -74,8 +74,8 @@ function App() {
       <div className="game-container">
         <canvas
           ref={canvasRef}
-          width={400}
-          height={700}
+          width={440}
+          height={740}
           onClick={handleClick}
           style={{ cursor: gameState.gameOver ? 'default' : 'pointer' }}
         />

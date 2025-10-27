@@ -1,7 +1,8 @@
 import { GameState, Block } from './gameState';
 
 const CELL_SIZE = 40; // pixels
-const GRID_MARGIN = 60;
+const GRID_MARGIN_LEFT = 120; // Space for prize labels on left
+const GRID_MARGIN_TOP = 100; // Space for score display on top
 
 // Main render function
 export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
@@ -21,9 +22,9 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   });
 
   // Draw moving blocks
-  state.movingBlocks.forEach((block, index) => {
-    const x = state.position + index;
-    drawBlockAt(ctx, x, state.level, state.gridHeight, '#00ffff');
+  state.movingBlocks.forEach((block) => {
+    const x = state.position + block.column;
+    drawBlockAt(ctx, x, block.row, state.gridHeight, '#00ffff');
   });
 
   // Draw prize indicators
@@ -39,8 +40,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, state: GameState): void {
 
   for (let row = 0; row < state.gridHeight; row++) {
     for (let col = 0; col < state.gridWidth; col++) {
-      const x = GRID_MARGIN + col * CELL_SIZE;
-      const y = GRID_MARGIN + (state.gridHeight - row - 1) * CELL_SIZE; // Invert Y for bottom-up
+      const x = GRID_MARGIN_LEFT + col * CELL_SIZE;
+      const y = GRID_MARGIN_TOP + (state.gridHeight - row - 1) * CELL_SIZE; // Invert Y for bottom-up
 
       ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
     }
@@ -48,8 +49,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, state: GameState): void {
 }
 
 function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: number, color: string): void {
-  const x = GRID_MARGIN + block.column * CELL_SIZE;
-  const y = GRID_MARGIN + (gridHeight - 1 - block.row) * CELL_SIZE; // gridHeight - 1 - row for bottom-up
+  const x = GRID_MARGIN_LEFT + block.column * CELL_SIZE;
+  const y = GRID_MARGIN_TOP + (gridHeight - 1 - block.row) * CELL_SIZE; // gridHeight - 1 - row for bottom-up
 
   ctx.fillStyle = color;
   ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
@@ -61,8 +62,8 @@ function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: numb
 }
 
 function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: number, gridHeight: number, color: string): void {
-  const x = GRID_MARGIN + position * CELL_SIZE;
-  const y = GRID_MARGIN + (gridHeight - row) * CELL_SIZE;
+  const x = GRID_MARGIN_LEFT + position * CELL_SIZE;
+  const y = GRID_MARGIN_TOP + (gridHeight - 1 - row) * CELL_SIZE;
 
   // Add glow effect for moving blocks
   ctx.shadowBlur = 15;
@@ -78,35 +79,35 @@ function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: numbe
 }
 
 function drawPrizeIndicator(ctx: CanvasRenderingContext2D, state: GameState): void {
-  ctx.font = '14px Arial';
+  ctx.font = 'bold 12px Arial';
 
-  // Minor prize
-  const minorY = GRID_MARGIN + (state.gridHeight - state.minorPrizeRow) * CELL_SIZE;
-  ctx.fillStyle = state.minorPrizeReached ? '#00ffff' : '#666';
-  ctx.fillText('MINOR', 10, minorY + CELL_SIZE / 2);
+  // Minor prize - position at the TOP of row 11
+  const minorY = GRID_MARGIN_TOP + (state.gridHeight - state.minorPrizeRow) * CELL_SIZE;
+  ctx.fillStyle = state.minorPrizeReached ? '#00ffff' : '#888';
+  ctx.fillText('MINOR PRIZE', 10, minorY + 5);
 
-  // Draw line
+  // Draw line across grid at minor prize row
   ctx.strokeStyle = state.minorPrizeReached ? '#00ffff' : '#666';
   ctx.lineWidth = 2;
   ctx.setLineDash([5, 5]);
   ctx.beginPath();
-  ctx.moveTo(GRID_MARGIN - 10, minorY);
-  ctx.lineTo(GRID_MARGIN + state.gridWidth * CELL_SIZE + 10, minorY);
+  ctx.moveTo(GRID_MARGIN_LEFT, minorY);
+  ctx.lineTo(GRID_MARGIN_LEFT + state.gridWidth * CELL_SIZE, minorY);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Major prize
-  const majorY = GRID_MARGIN + (state.gridHeight - state.majorPrizeRow) * CELL_SIZE;
-  ctx.fillStyle = state.level >= state.majorPrizeRow ? '#ffd700' : '#666';
-  ctx.fillText('MAJOR', 10, majorY + CELL_SIZE / 2);
+  // Major prize - position at the TOP of row 15
+  const majorY = GRID_MARGIN_TOP + (state.gridHeight - state.majorPrizeRow) * CELL_SIZE;
+  ctx.fillStyle = state.level >= state.majorPrizeRow ? '#ffd700' : '#888';
+  ctx.fillText('MAJOR PRIZE', 10, majorY + 5);
 
-  // Draw line
+  // Draw line across grid at major prize row
   ctx.strokeStyle = state.level >= state.majorPrizeRow ? '#ffd700' : '#666';
   ctx.lineWidth = 2;
   ctx.setLineDash([5, 5]);
   ctx.beginPath();
-  ctx.moveTo(GRID_MARGIN - 10, majorY);
-  ctx.lineTo(GRID_MARGIN + state.gridWidth * CELL_SIZE + 10, majorY);
+  ctx.moveTo(GRID_MARGIN_LEFT, majorY);
+  ctx.lineTo(GRID_MARGIN_LEFT + state.gridWidth * CELL_SIZE, majorY);
   ctx.stroke();
   ctx.setLineDash([]);
 }
