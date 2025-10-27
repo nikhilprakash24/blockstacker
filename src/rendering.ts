@@ -79,37 +79,55 @@ function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: numbe
 }
 
 function drawPrizeIndicator(ctx: CanvasRenderingContext2D, state: GameState): void {
-  ctx.font = 'bold 12px Arial';
+  const gridWidth = state.gridWidth * CELL_SIZE;
 
-  // Minor prize - position at the TOP of row 11
-  const minorY = GRID_MARGIN_TOP + (state.gridHeight - state.minorPrizeRow) * CELL_SIZE;
-  ctx.fillStyle = state.minorPrizeReached ? '#00ffff' : '#888';
-  ctx.fillText('MINOR PRIZE', 10, minorY + 5);
+  // Minor prize belt - at row 10 (0-indexed)
+  const minorY = GRID_MARGIN_TOP + (state.gridHeight - 1 - state.minorPrizeRow) * CELL_SIZE;
+  const minorActive = state.minorPrizeReached;
 
-  // Draw line across grid at minor prize row
-  ctx.strokeStyle = state.minorPrizeReached ? '#00ffff' : '#666';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
+  // Draw semi-transparent belt across the row
+  ctx.fillStyle = minorActive ? 'rgba(0, 255, 255, 0.15)' : 'rgba(74, 123, 167, 0.1)';
+  ctx.fillRect(GRID_MARGIN_LEFT, minorY, gridWidth, CELL_SIZE);
+
+  // Draw top and bottom borders of belt
+  ctx.strokeStyle = minorActive ? '#00ffff' : '#4a7ba7';
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(GRID_MARGIN_LEFT, minorY);
-  ctx.lineTo(GRID_MARGIN_LEFT + state.gridWidth * CELL_SIZE, minorY);
+  ctx.lineTo(GRID_MARGIN_LEFT + gridWidth, minorY);
+  ctx.moveTo(GRID_MARGIN_LEFT, minorY + CELL_SIZE);
+  ctx.lineTo(GRID_MARGIN_LEFT + gridWidth, minorY + CELL_SIZE);
   ctx.stroke();
-  ctx.setLineDash([]);
 
-  // Major prize - position at the TOP of row 15
-  const majorY = GRID_MARGIN_TOP + (state.gridHeight - state.majorPrizeRow) * CELL_SIZE;
-  ctx.fillStyle = state.level >= state.majorPrizeRow ? '#ffd700' : '#888';
-  ctx.fillText('MAJOR PRIZE', 10, majorY + 5);
+  // Draw label
+  ctx.font = 'bold 11px Arial';
+  ctx.fillStyle = minorActive ? '#00ffff' : '#888';
+  ctx.fillText('MINOR', 10, minorY + 22);
+  ctx.fillText('PRIZE', 10, minorY + 34);
 
-  // Draw line across grid at major prize row
-  ctx.strokeStyle = state.level >= state.majorPrizeRow ? '#ffd700' : '#666';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([5, 5]);
+  // Major prize belt - at row 14 (0-indexed)
+  const majorY = GRID_MARGIN_TOP + (state.gridHeight - 1 - state.majorPrizeRow) * CELL_SIZE;
+  const majorActive = state.level >= state.majorPrizeRow;
+
+  // Draw semi-transparent belt across the row
+  ctx.fillStyle = majorActive ? 'rgba(255, 215, 0, 0.15)' : 'rgba(74, 123, 167, 0.1)';
+  ctx.fillRect(GRID_MARGIN_LEFT, majorY, gridWidth, CELL_SIZE);
+
+  // Draw top and bottom borders of belt
+  ctx.strokeStyle = majorActive ? '#ffd700' : '#4a7ba7';
+  ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(GRID_MARGIN_LEFT, majorY);
-  ctx.lineTo(GRID_MARGIN_LEFT + state.gridWidth * CELL_SIZE, majorY);
+  ctx.lineTo(GRID_MARGIN_LEFT + gridWidth, majorY);
+  ctx.moveTo(GRID_MARGIN_LEFT, majorY + CELL_SIZE);
+  ctx.lineTo(GRID_MARGIN_LEFT + gridWidth, majorY + CELL_SIZE);
   ctx.stroke();
-  ctx.setLineDash([]);
+
+  // Draw label
+  ctx.font = 'bold 11px Arial';
+  ctx.fillStyle = majorActive ? '#ffd700' : '#888';
+  ctx.fillText('MAJOR', 10, majorY + 22);
+  ctx.fillText('PRIZE', 10, majorY + 34);
 }
 
 function drawScore(ctx: CanvasRenderingContext2D, state: GameState): void {

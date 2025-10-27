@@ -60,22 +60,22 @@ describe('GameLoop', () => {
       const testState = { ...state, position: 2 };
       const newState = placeBlocks(testState);
 
-      // Should have 3 placed blocks
+      // Should have 3 placed blocks at row 0
       expect(newState.blocks).toHaveLength(3);
       expect(newState.blocks[0].column).toBe(2);
       expect(newState.blocks[1].column).toBe(3);
       expect(newState.blocks[2].column).toBe(4);
-      expect(newState.blocks[0].row).toBe(1);
+      expect(newState.blocks[0].row).toBe(0); // Row 0 now
     });
 
     it('should create moving blocks for next level after placement', () => {
       const testState = { ...state, position: 2 };
       const newState = placeBlocks(testState);
 
-      // Should have moving blocks for level 2
+      // Should have moving blocks for level 1 (next after 0)
       expect(newState.movingBlocks).toHaveLength(3);
-      expect(newState.level).toBe(2);
-      expect(newState.movingBlocks[0].row).toBe(2);
+      expect(newState.level).toBe(1);
+      expect(newState.movingBlocks[0].row).toBe(1);
     });
 
     it('should trim blocks that do not align with base', () => {
@@ -107,7 +107,7 @@ describe('GameLoop', () => {
       const testState = { ...state, position: 2, score: 0 };
       const newState = placeBlocks(testState);
 
-      // Score = blocks * 10 * level = 3 * 10 * 1 = 30
+      // Score = blocks * 10 * (level + 1) = 3 * 10 * (0 + 1) = 30
       expect(newState.score).toBe(30);
     });
 
@@ -125,34 +125,34 @@ describe('GameLoop', () => {
       expect(state2.perfectPlacements).toBe(1); // Only first placement was perfect
     });
 
-    it('should detect minor prize when reaching row 11', () => {
+    it('should detect minor prize when reaching row 10', () => {
       let testState = state;
 
-      // Play through to level 11
-      for (let i = 1; i < 11; i++) {
+      // Play through to level 10 (0-indexed row 10)
+      for (let i = 0; i < 10; i++) {
         testState = placeBlocks({ ...testState, position: 0 });
       }
 
-      expect(testState.level).toBe(11);
+      expect(testState.level).toBe(10);
       expect(testState.minorPrizeReached).toBe(false);
 
-      // Place on row 11
+      // Place on row 10
       testState = placeBlocks({ ...testState, position: 0 });
       expect(testState.minorPrizeReached).toBe(true);
     });
 
-    it('should detect win when reaching row 15', () => {
+    it('should detect win when reaching row 14', () => {
       let testState = state;
 
-      // Play through to level 15
-      for (let i = 1; i < 15; i++) {
+      // Play through to level 14 (0-indexed row 14)
+      for (let i = 0; i < 14; i++) {
         testState = placeBlocks({ ...testState, position: 0 });
       }
 
-      expect(testState.level).toBe(15);
+      expect(testState.level).toBe(14);
       expect(testState.won).toBe(false);
 
-      // Place on row 15
+      // Place on row 14
       testState = placeBlocks({ ...testState, position: 0 });
       expect(testState.won).toBe(true);
       expect(testState.gameOver).toBe(true);
@@ -216,7 +216,7 @@ describe('GameLoop', () => {
       const newState = handleButtonPress(testState);
 
       expect(newState.blocks).toHaveLength(3);
-      expect(newState.level).toBe(2);
+      expect(newState.level).toBe(1); // Level 0 -> 1 after first placement
     });
 
     it('should not respond when game is over', () => {
@@ -248,13 +248,13 @@ describe('GameLoop', () => {
     it('should play through multiple levels successfully', () => {
       let testState = state;
 
-      // Play 5 levels with perfect alignment
+      // Play 5 levels with perfect alignment (starting from level 0)
       for (let i = 0; i < 5; i++) {
         testState = { ...testState, position: 0 };
         testState = handleButtonPress(testState);
 
         expect(testState.gameOver).toBe(false);
-        expect(testState.level).toBe(i + 2);
+        expect(testState.level).toBe(i + 1); // Level 0 -> 1 -> 2 -> 3 -> 4 -> 5
       }
 
       expect(testState.perfectPlacements).toBe(5);

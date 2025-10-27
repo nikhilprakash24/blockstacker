@@ -26,38 +26,39 @@ describe('GameState', () => {
 
       expect(state.gridWidth).toBe(7);
       expect(state.gridHeight).toBe(15);
-      expect(state.level).toBe(1);
+      expect(state.level).toBe(0); // Now starts at level 0
       expect(state.blocks).toEqual([]);
       expect(state.movingBlocks).toHaveLength(3);
       expect(state.direction).toBe('right');
       expect(state.position).toBe(0);
       expect(state.score).toBe(0);
       expect(state.perfectPlacements).toBe(0);
-      expect(state.minorPrizeRow).toBe(11);
-      expect(state.majorPrizeRow).toBe(15);
+      expect(state.minorPrizeRow).toBe(10); // Row 10 (0-indexed)
+      expect(state.majorPrizeRow).toBe(14); // Row 14 (0-indexed)
       expect(state.minorPrizeReached).toBe(false);
       expect(state.gameOver).toBe(false);
       expect(state.won).toBe(false);
       expect(state.paused).toBe(false);
       expect(state.difficulty).toBe('normal');
+      expect(state.alignmentTolerance).toBe(0.35);
     });
 
     it('should initialize with 3 moving blocks in correct positions', () => {
       const state = initializeGame('normal');
 
       expect(state.movingBlocks).toEqual([
-        { column: 0, row: 1, placed: false },
-        { column: 1, row: 1, placed: false },
-        { column: 2, row: 1, placed: false },
+        { column: 0, row: 0, placed: false }, // Start at row 0
+        { column: 1, row: 0, placed: false },
+        { column: 2, row: 0, placed: false },
       ]);
     });
 
-    it('should initialize moving blocks on row 1 (matching level 1)', () => {
+    it('should initialize moving blocks on row 0 (matching level 0)', () => {
       const state = initializeGame('normal');
 
-      expect(state.level).toBe(1);
+      expect(state.level).toBe(0); // Start at level 0
       state.movingBlocks.forEach(block => {
-        expect(block.row).toBe(1);
+        expect(block.row).toBe(0); // Start at row 0
       });
     });
 

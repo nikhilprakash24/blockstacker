@@ -33,8 +33,13 @@ export function updatePosition(state: GameState, deltaTime: number): GameState {
   };
 }
 
-// Check alignment between moving blocks and placed blocks
-function checkAlignment(movingBlocks: Block[], placedBlocks: Block[], currentRow: number): {
+// Check alignment between moving blocks and placed blocks with tolerance
+function checkAlignment(
+  movingBlocks: Block[],
+  placedBlocks: Block[],
+  currentRow: number,
+  tolerance: number
+): {
   aligned: Block[],
   trimmed: Block[]
 } {
@@ -49,17 +54,31 @@ function checkAlignment(movingBlocks: Block[], placedBlocks: Block[], currentRow
     };
   }
 
-  // Check which moving blocks align with base blocks
+  // Check which moving blocks align with base blocks (with tolerance)
   const aligned: Block[] = [];
   const trimmed: Block[] = [];
 
   movingBlocks.forEach(movingBlock => {
-    const isAligned = baseBlocks.some(baseBlock =>
-      baseBlock.column === movingBlock.column
-    );
+    // Find the nearest base block within tolerance
+    let nearestBaseBlock: Block | null = null;
+    let minDistance = Infinity;
 
-    if (isAligned) {
-      aligned.push({ ...movingBlock, placed: true, row: currentRow });
+    baseBlocks.forEach(baseBlock => {
+      const distance = Math.abs(baseBlock.column - movingBlock.column);
+      if (distance <= tolerance && distance < minDistance) {
+        minDistance = distance;
+        nearestBaseBlock = baseBlock;
+      }
+    });
+
+    if (nearestBaseBlock !== null) {
+      // Snap to the base block's column
+      aligned.push({
+        ...movingBlock,
+        column: nearestBaseBlock.column,
+        placed: true,
+        row: currentRow
+      });
     } else {
       trimmed.push(movingBlock);
     }
@@ -72,18 +91,19 @@ function checkAlignment(movingBlocks: Block[], placedBlocks: Block[], currentRow
 export function placeBlocks(state: GameState): GameState {
   const currentRow = state.level;
 
-  // Convert moving blocks positions to block objects
+  // Convert moving blocks positions to block objects (use actual position with decimals)
   const movingBlocksAtCurrentPosition = state.movingBlocks.map(mb => ({
-    column: Math.round(state.position) + mb.column, // Offset by block position
+    column: state.position + mb.column, // Keep decimal position for tolerance check
     row: currentRow,
     placed: false
   }));
 
-  // Check alignment with blocks below
+  // Check alignment with blocks below (with tolerance)
   const { aligned, trimmed } = checkAlignment(
     movingBlocksAtCurrentPosition,
     state.blocks,
-    currentRow
+    currentRow,
+    state.alignmentTolerance
   );
 
   // Game over if no blocks aligned
@@ -113,7 +133,8 @@ export function placeBlocks(state: GameState): GameState {
     }));
   }
 
-  const newScore = state.score + (aligned.length * 10 * currentRow);
+  // Use (currentRow + 1) for scoring so row 0 gives points
+  const newScore = state.score + (aligned.length * 10 * (currentRow + 1));
   saveHighScore(newScore);
 
   return {
@@ -127,7 +148,8 @@ export function placeBlocks(state: GameState): GameState {
     minorPrizeReached: minorPrizeReached || state.minorPrizeReached,
     won: won,
     gameOver: won,
-    oscillationTime: calculateOscillationTime(currentRow + 1, state.difficulty)
+    // Use (currentRow + 2) for speed calc (next level after placement)
+    oscillationTime: calculateOscillationTime(currentRow + 2, state.difficulty)
   };
 }
 

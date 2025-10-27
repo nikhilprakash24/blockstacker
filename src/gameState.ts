@@ -43,6 +43,7 @@ export interface GameState {
   won: boolean;
   paused: boolean;
   difficulty: Difficulty;
+  alignmentTolerance: number; // How close blocks need to be to align (0.0-0.5)
 }
 
 export interface DifficultyConfig {
@@ -50,6 +51,7 @@ export interface DifficultyConfig {
   baseSpeed: number;
   speedIncrease: number;
   winWindow: number;
+  alignmentTolerance: number; // How close to column center is acceptable (0.0-0.5)
   description: string;
 }
 
@@ -59,6 +61,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     baseSpeed: 1500,
     speedIncrease: 0.05,
     winWindow: 50,
+    alignmentTolerance: 0.45, // Very forgiving - almost half a block
     description: 'Forgiving timing, slower progression. Great for learning!'
   },
   normal: {
@@ -66,6 +69,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     baseSpeed: 1200,
     speedIncrease: 0.10,
     winWindow: 20,
+    alignmentTolerance: 0.35, // Moderate tolerance - matches video feel
     description: 'Matches the video timing. Standard practice mode.'
   },
   arcade: {
@@ -73,6 +77,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     baseSpeed: 1000,
     speedIncrease: 0.15,
     winWindow: 5,
+    alignmentTolerance: 0.25, // Strict but fair
     description: 'Challenging! Fast start with aggressive progression.'
   }
 };
@@ -110,19 +115,22 @@ export function loadHighScore(): number {
 
 // Initialize new game
 export function initializeGame(difficulty: Difficulty = 'normal', gridWidth: number = 7): GameState {
+  // Start at row 0 (bottom of grid), level 0
   const initialMovingBlocks: Block[] = [
-    { column: 0, row: 1, placed: false },
-    { column: 1, row: 1, placed: false },
-    { column: 2, row: 1, placed: false }
+    { column: 0, row: 0, placed: false },
+    { column: 1, row: 0, placed: false },
+    { column: 2, row: 0, placed: false }
   ];
+
+  const config = DIFFICULTIES[difficulty];
 
   return {
     gridWidth: gridWidth,
     gridHeight: 15,
-    level: 1,
+    level: 0, // Start at level 0 (row 0 = bottom)
     blocks: [],
     movingBlocks: initialMovingBlocks,
-    oscillationTime: calculateOscillationTime(1, difficulty),
+    oscillationTime: calculateOscillationTime(1, difficulty), // Still use 1 for speed calc
     direction: 'right',
     position: 0,
     lastUpdate: Date.now(),
@@ -130,12 +138,13 @@ export function initializeGame(difficulty: Difficulty = 'normal', gridWidth: num
     score: 0,
     highScore: loadHighScore(),
     perfectPlacements: 0,
-    minorPrizeRow: 11,
-    majorPrizeRow: 15,
+    minorPrizeRow: 10, // Row 10 (11th row from bottom, 0-indexed)
+    majorPrizeRow: 14, // Row 14 (15th row from bottom, 0-indexed)
     minorPrizeReached: false,
     gameOver: false,
     won: false,
     paused: false,
-    difficulty: difficulty
+    difficulty: difficulty,
+    alignmentTolerance: config.alignmentTolerance
   };
 }
