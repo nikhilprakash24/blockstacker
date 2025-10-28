@@ -5,8 +5,13 @@ export function updatePosition(state: GameState, deltaTime: number): GameState {
   const timePerColumn = calculateTimePerColumn(state.oscillationTime, state.gridWidth);
   const columnsMoved = deltaTime / timePerColumn;
 
-  // Calculate max position based on number of moving blocks
-  const maxPosition = state.gridWidth - state.movingBlocks.length;
+  // Calculate max position based on the span of moving blocks (not just count)
+  // Blocks might have gaps after trimming, e.g., [{column: 0}, {column: 2}]
+  const maxMovingBlockColumn = state.movingBlocks.length > 0
+    ? Math.max(...state.movingBlocks.map(b => b.column))
+    : 0;
+  const blockSpan = maxMovingBlockColumn + 1; // +1 because column 2 occupies space up to position 3
+  const maxPosition = state.gridWidth - blockSpan;
 
   let newPosition = state.position;
   let newDirection = state.direction;
@@ -116,8 +121,12 @@ export function placeBlocks(state: GameState): GameState {
   const currentRow = state.level;
 
   // Clamp position to ensure blocks don't go out of bounds
-  // Max position = gridWidth - number of blocks
-  const maxPosition = state.gridWidth - state.movingBlocks.length;
+  // Use block span (not just count) to handle gaps in block positions
+  const maxMovingBlockColumn = state.movingBlocks.length > 0
+    ? Math.max(...state.movingBlocks.map(b => b.column))
+    : 0;
+  const blockSpan = maxMovingBlockColumn + 1;
+  const maxPosition = state.gridWidth - blockSpan;
   const clampedPosition = Math.max(0, Math.min(state.position, maxPosition));
 
   // Convert moving blocks positions to block objects (use actual position with decimals)

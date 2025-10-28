@@ -102,7 +102,7 @@ function App() {
           </div>
         </div>
 
-        {gameState.minorPrizeReached && !gameState.won && !gameState.gameOver && (
+        {gameState.minorPrizeReached && !gameState.continuedFromMinorPrize && !gameState.won && !gameState.gameOver && (
           <div className="prize-prompt">
             <h2>Minor Prize Reached!</h2>
             <p>You can stop here or continue for the Major Prize</p>
@@ -111,7 +111,7 @@ function App() {
               <button onClick={() => setGameState({ ...gameState, gameOver: true })}>
                 Stop Here
               </button>
-              <button onClick={() => setGameState({ ...gameState, continueTime: Date.now() })}>
+              <button onClick={() => setGameState({ ...gameState, continueTime: Date.now(), continuedFromMinorPrize: true })}>
                 Continue
               </button>
             </div>

@@ -38,6 +38,7 @@ export interface GameState {
   minorPrizeRow: number;    // 11
   majorPrizeRow: number;    // 15
   minorPrizeReached: boolean;
+  continuedFromMinorPrize: boolean; // User chose to continue after reaching minor prize
 
   // Game status
   gameOver: boolean;
@@ -143,6 +144,7 @@ export function initializeGame(difficulty: Difficulty = 'normal', gridWidth: num
     minorPrizeRow: 10, // Row 10 (11th row from bottom, 0-indexed)
     majorPrizeRow: 14, // Row 14 (15th row from bottom, 0-indexed)
     minorPrizeReached: false,
+    continuedFromMinorPrize: false,
     gameOver: false,
     won: false,
     paused: false,
