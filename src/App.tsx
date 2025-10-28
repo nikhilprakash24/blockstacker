@@ -106,11 +106,12 @@ function App() {
           <div className="prize-prompt">
             <h2>Minor Prize Reached!</h2>
             <p>You can stop here or continue for the Major Prize</p>
+            <p className="cooldown-notice">Game will resume after 1 second cooldown</p>
             <div className="prize-buttons">
               <button onClick={() => setGameState({ ...gameState, gameOver: true })}>
                 Stop Here
               </button>
-              <button onClick={handleClick}>
+              <button onClick={() => setGameState({ ...gameState, continueTime: Date.now() })}>
                 Continue
               </button>
             </div>

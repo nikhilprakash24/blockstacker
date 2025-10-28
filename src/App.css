@@ -121,6 +121,14 @@ canvas {
   margin-bottom: 15px;
 }
 
+.cooldown-notice {
+  color: #ffa500;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 10px 0;
+  opacity: 0.9;
+}
+
 .victory-screen h1 {
   font-size: 2rem;
   color: #ffd700;

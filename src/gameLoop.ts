@@ -5,6 +5,9 @@ export function updatePosition(state: GameState, deltaTime: number): GameState {
   const timePerColumn = calculateTimePerColumn(state.oscillationTime, state.gridWidth);
   const columnsMoved = deltaTime / timePerColumn;
 
+  // Calculate max position based on number of moving blocks
+  const maxPosition = state.gridWidth - state.movingBlocks.length;
+
   let newPosition = state.position;
   let newDirection = state.direction;
 
@@ -12,8 +15,8 @@ export function updatePosition(state: GameState, deltaTime: number): GameState {
     newPosition += columnsMoved;
 
     // Reached right edge, reverse
-    if (newPosition >= state.gridWidth - 1) {
-      newPosition = state.gridWidth - 1 - (newPosition - (state.gridWidth - 1));
+    if (newPosition >= maxPosition) {
+      newPosition = maxPosition - (newPosition - maxPosition);
       newDirection = 'left';
     }
   } else {
@@ -33,8 +36,8 @@ export function updatePosition(state: GameState, deltaTime: number): GameState {
   };
 }
 
-// Check alignment between moving blocks and placed blocks using overlap logic
-// Blocks move as a UNIT, and we calculate overlap between the moving unit and base unit
+// Check alignment using continuous platform + discrete blocks + overhang threshold
+// Base blocks form a continuous platform, moving blocks are discrete and can overhang
 function checkAlignment(
   movingBlocks: Block[],
   placedBlocks: Block[],
@@ -55,35 +58,38 @@ function checkAlignment(
     };
   }
 
-  // Calculate the continuous range occupied by base blocks
-  // Each block at column X occupies the range [X, X+1)
+  // BASE = CONTINUOUS PLATFORM
+  // Calculate the continuous platform formed by base blocks
   const baseColumns = baseBlocks.map(b => b.column);
-  const baseMin = Math.min(...baseColumns);
-  const baseMax = Math.max(...baseColumns) + 1; // +1 because block extends to next column
+  const platformStart = Math.min(...baseColumns); // Left edge of platform
+  const platformEnd = Math.max(...baseColumns) + 1; // Right edge of platform
 
-  // Check each moving block based on overlap with base range
+  // MOVING BLOCKS = DISCRETE with OVERHANG THRESHOLD
   const aligned: Block[] = [];
   const trimmed: Block[] = [];
 
+  // Tolerance controls maximum allowed overhang
+  // tolerance 0.45 (easy) -> allow 0.75 (75%) overhang = need 25% support
+  // tolerance 0.35 (normal) -> allow 0.65 (65%) overhang = need 35% support
+  // tolerance 0.25 (arcade) -> allow 0.55 (55%) overhang = need 45% support
+  const maxOverhangAllowed = 0.3 + tolerance;
+
   movingBlocks.forEach(movingBlock => {
-    // Calculate the range this moving block occupies
-    const blockStart = movingBlock.column;
-    const blockEnd = movingBlock.column + 1;
+    // Each discrete block occupies [column, column+1)
+    const blockLeft = movingBlock.column;
+    const blockRight = movingBlock.column + 1;
 
-    // Calculate overlap between this block and the base range
-    const overlapStart = Math.max(blockStart, baseMin);
-    const overlapEnd = Math.min(blockEnd, baseMax);
-    const overlapWidth = Math.max(0, overlapEnd - overlapStart);
+    // Calculate how much of this block is supported by the platform
+    const supportedLeft = Math.max(blockLeft, platformStart);
+    const supportedRight = Math.min(blockRight, platformEnd);
+    const supportedWidth = Math.max(0, supportedRight - supportedLeft);
 
-    // Tolerance affects the minimum overlap required
-    // Higher tolerance = lower overlap needed
-    // tolerance 0.45 (easy) -> need 0.3 overlap (30%)
-    // tolerance 0.35 (normal) -> need 0.4 overlap (40%)
-    // tolerance 0.25 (arcade) -> need 0.5 overlap (50%)
-    const minOverlapRequired = 0.75 - tolerance;
+    // Calculate overhang (portion NOT on platform)
+    const overhang = 1.0 - supportedWidth;
 
-    if (overlapWidth >= minOverlapRequired) {
-      // Block has sufficient support - find nearest base block to snap to
+    if (overhang <= maxOverhangAllowed) {
+      // Block has acceptable overhang - keep it!
+      // Snap to nearest base column for placement
       const nearestBase = baseBlocks.reduce((nearest, base) => {
         const distToNearest = Math.abs(nearest.column - movingBlock.column);
         const distToBase = Math.abs(base.column - movingBlock.column);
@@ -97,7 +103,7 @@ function checkAlignment(
         row: currentRow
       });
     } else {
-      // Block overhangs too much - trim it
+      // Block overhangs too much - it falls off!
       trimmed.push(movingBlock);
     }
   });
@@ -109,9 +115,14 @@ function checkAlignment(
 export function placeBlocks(state: GameState): GameState {
   const currentRow = state.level;
 
+  // Clamp position to ensure blocks don't go out of bounds
+  // Max position = gridWidth - number of blocks
+  const maxPosition = state.gridWidth - state.movingBlocks.length;
+  const clampedPosition = Math.max(0, Math.min(state.position, maxPosition));
+
   // Convert moving blocks positions to block objects (use actual position with decimals)
   const movingBlocksAtCurrentPosition = state.movingBlocks.map(mb => ({
-    column: state.position + mb.column, // Keep decimal position for tolerance check
+    column: clampedPosition + mb.column, // Keep decimal position for overhang calculation
     row: currentRow,
     placed: false
   }));
@@ -197,6 +208,12 @@ export function handleButtonPress(state: GameState): GameState {
 
   // Record press time
   const pressTime = Date.now();
+
+  // Check for 1-second cooldown after continuing from prize screen
+  if (state.continueTime > 0 && pressTime - state.continueTime < 1000) {
+    // Still in cooldown period, ignore button press
+    return state;
+  }
 
   // Freeze blocks and check placement
   const newState = placeBlocks({

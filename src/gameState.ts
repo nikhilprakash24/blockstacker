@@ -27,6 +27,7 @@ export interface GameState {
   // Timing
   lastUpdate: number;       // Timestamp of last frame
   pressTime: number;        // When button was pressed
+  continueTime: number;     // When continue was pressed from prize screen
 
   // Scoring
   score: number;
@@ -135,6 +136,7 @@ export function initializeGame(difficulty: Difficulty = 'normal', gridWidth: num
     position: 0,
     lastUpdate: Date.now(),
     pressTime: 0,
+    continueTime: 0,
     score: 0,
     highScore: loadHighScore(),
     perfectPlacements: 0,

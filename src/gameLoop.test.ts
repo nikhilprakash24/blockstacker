@@ -242,6 +242,27 @@ describe('GameLoop', () => {
       expect(newState.pressTime).toBeGreaterThanOrEqual(before);
       expect(newState.pressTime).toBeLessThanOrEqual(after);
     });
+
+    it('should ignore button press during 1-second cooldown after continue', () => {
+      // Set continueTime to now (simulating just clicked continue)
+      const testState = { ...state, position: 2, continueTime: Date.now() };
+      const newState = handleButtonPress(testState);
+
+      // State should remain unchanged (no blocks placed)
+      expect(newState.blocks).toHaveLength(0);
+      expect(newState.level).toBe(0);
+      expect(newState).toEqual(testState);
+    });
+
+    it('should allow button press after 1-second cooldown expires', () => {
+      // Set continueTime to 1.1 seconds ago
+      const testState = { ...state, position: 2, continueTime: Date.now() - 1100 };
+      const newState = handleButtonPress(testState);
+
+      // Blocks should be placed normally
+      expect(newState.blocks).toHaveLength(3);
+      expect(newState.level).toBe(1);
+    });
   });
 
   describe('Integration: Full Game Play', () => {
