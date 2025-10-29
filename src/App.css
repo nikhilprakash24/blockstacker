@@ -98,6 +98,17 @@ canvas {
   transform: translateY(-2px);
 }
 
+.diff-button.carnivale {
+  background: #3d2561;
+  border: 2px solid #9b59b6;
+  font-weight: bold;
+}
+
+.diff-button.carnivale:hover {
+  background: #6c3fb3;
+  border-color: #a569bd;
+}
+
 .prize-prompt,
 .victory-screen,
 .game-over-screen {

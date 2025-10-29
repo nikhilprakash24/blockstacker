@@ -6,7 +6,7 @@ import './App.css';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<GameState>(() => initializeGame('normal'));
+  const [gameState, setGameState] = useState<GameState>(() => initializeGame('carnivale-25'));
   const animationRef = useRef<number>();
   const gameStateRef = useRef<GameState>(gameState);
 
@@ -89,6 +89,17 @@ function App() {
             PLACE BLOCKS (SPACE)
           </button>
 
+          <div className="difficulty-buttons">
+            <button onClick={() => handleRestart('carnivale-30')} className="diff-button carnivale">
+              Carnivale -30%
+            </button>
+            <button onClick={() => handleRestart('carnivale-25')} className="diff-button carnivale">
+              Carnivale -25%
+            </button>
+            <button onClick={() => handleRestart('carnivale-20')} className="diff-button carnivale">
+              Carnivale -20%
+            </button>
+          </div>
           <div className="difficulty-buttons">
             <button onClick={() => handleRestart('easy')} className="diff-button">
               Easy
