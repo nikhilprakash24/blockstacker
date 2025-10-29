@@ -50,6 +50,9 @@ export interface GameState {
   difficulty: Difficulty;
   alignmentTolerance: number; // How close blocks need to be to align (0.0-0.5)
   spawnMode: SpawnMode;       // How blocks spawn after placement
+
+  // Ad tracking
+  gamesPlayedSinceAd: number; // Track games for interstitial ad frequency
 }
 
 export interface DifficultyConfig {
@@ -191,6 +194,7 @@ export function initializeGame(
     paused: false,
     difficulty: difficulty,
     alignmentTolerance: config.alignmentTolerance,
-    spawnMode: spawnMode
+    spawnMode: spawnMode,
+    gamesPlayedSinceAd: 0
   };
 }

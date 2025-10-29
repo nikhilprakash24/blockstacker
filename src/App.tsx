@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { GameState, initializeGame, Difficulty, SpawnMode } from './gameState';
 import { gameLoop, handleButtonPress } from './gameLoop';
 import { render } from './rendering';
+import { adService } from './services/adService';
+import { AD_SETTINGS } from './config/adConfig';
 import './App.css';
 
 function App() {
@@ -16,6 +18,31 @@ function App() {
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
+
+  // Initialize AdMob on app start
+  useEffect(() => {
+    adService.initialize().then(() => {
+      console.log('Ad service ready');
+      // Preload rewarded ad for later use
+      adService.preloadRewarded();
+    });
+
+    // Cleanup ads when app unmounts
+    return () => {
+      adService.cleanup();
+    };
+  }, []);
+
+  // Show/hide banner ad based on game state
+  useEffect(() => {
+    if (gameStarted) {
+      // Show banner when game is active
+      adService.showBanner();
+    } else {
+      // Hide banner on start screen
+      adService.hideBanner();
+    }
+  }, [gameStarted]);
 
   // Game loop
   useEffect(() => {
@@ -58,13 +85,45 @@ function App() {
   }, []);
 
   const handleRestart = useCallback((difficulty?: Difficulty, spawnMode?: SpawnMode) => {
-    setGameState(initializeGame(
-      difficulty || gameState.difficulty,
-      7,
-      spawnMode || gameState.spawnMode
-    ));
-    setGameStarted(true);
-  }, [gameState.difficulty, gameState.spawnMode]);
+    // Check if we should show interstitial ad
+    const gamesPlayed = gameState.gamesPlayedSinceAd + 1;
+    const shouldShowAd = gamesPlayed >= getRandomAdFrequency();
+
+    if (shouldShowAd) {
+      // Show interstitial ad, then restart
+      adService.showInterstitial().then((shown) => {
+        if (shown) {
+          console.log('Interstitial ad shown, resetting counter');
+        }
+        // Reset regardless of whether ad was shown
+        const newState = initializeGame(
+          difficulty || gameState.difficulty,
+          7,
+          spawnMode || gameState.spawnMode
+        );
+        newState.gamesPlayedSinceAd = 0; // Reset counter
+        setGameState(newState);
+        setGameStarted(true);
+      });
+    } else {
+      // Just restart, increment counter
+      const newState = initializeGame(
+        difficulty || gameState.difficulty,
+        7,
+        spawnMode || gameState.spawnMode
+      );
+      newState.gamesPlayedSinceAd = gamesPlayed;
+      setGameState(newState);
+      setGameStarted(true);
+    }
+  }, [gameState.difficulty, gameState.spawnMode, gameState.gamesPlayedSinceAd]);
+
+  // Helper function to randomize ad frequency (3-5 games)
+  const getRandomAdFrequency = () => {
+    return Math.floor(
+      Math.random() * (AD_SETTINGS.interstitialFrequencyMax - AD_SETTINGS.interstitialFrequencyMin + 1)
+    ) + AD_SETTINGS.interstitialFrequencyMin;
+  };
 
   const toggleSpawnMode = useCallback(() => {
     const newSpawnMode: SpawnMode = gameState.spawnMode === 'reset-left' ? 'resume' : 'reset-left';
@@ -160,6 +219,46 @@ function App() {
                     </button>
                     <button onClick={() => setGameState({ ...gameState, continueTime: Date.now(), continuedFromMinorPrize: true })}>
                       Continue
+                    </button>
+                  </div>
+
+                  {/* Rewarded video ad option */}
+                  <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(0, 217, 255, 0.3)' }}>
+                    <p style={{ color: '#ffa500', fontSize: '0.9rem', marginBottom: '10px' }}>
+                      💡 Watch an ad to continue instantly!
+                    </p>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const result = await adService.showRewarded();
+                          if (result.completed) {
+                            // User watched the full ad, let them continue
+                            setGameState({
+                              ...gameState,
+                              continueTime: Date.now(),
+                              continuedFromMinorPrize: true
+                            });
+                          } else {
+                            alert('Please watch the full ad to continue playing!');
+                          }
+                        } catch (error: any) {
+                          alert(error.message || 'Ad not available right now. Try again!');
+                        }
+                      }}
+                      className="rewarded-ad-button"
+                      style={{
+                        background: 'linear-gradient(135deg, #ffa500 0%, #ff8c00 100%)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 24px',
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        width: '100%',
+                      }}
+                    >
+                      🎬 Watch Ad to Continue
                     </button>
                   </div>
                 </div>
