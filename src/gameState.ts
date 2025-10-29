@@ -60,27 +60,27 @@ export interface DifficultyConfig {
 export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
   'carnivale-30': {
     name: 'Carnivale -30%',
-    baseSpeed: 1560, // 30% slower than normal (1200 * 1.30)
+    baseSpeed: 1950, // 30% slower than easy (1500 * 1.30)
     speedIncrease: 0.10, // Same progression as normal
     winWindow: 20,
     alignmentTolerance: 0.35,
-    description: 'Testing: 30% slower start, same progression'
+    description: 'Testing: 30% slower than Easy mode'
   },
   'carnivale-25': {
     name: 'Carnivale -25%',
-    baseSpeed: 1500, // 25% slower than normal (1200 * 1.25)
+    baseSpeed: 1875, // 25% slower than easy (1500 * 1.25)
     speedIncrease: 0.10, // Same progression as normal
     winWindow: 20,
     alignmentTolerance: 0.35,
-    description: 'Testing: 25% slower start, same progression'
+    description: 'Testing: 25% slower than Easy mode'
   },
   'carnivale-20': {
     name: 'Carnivale -20%',
-    baseSpeed: 1440, // 20% slower than normal (1200 * 1.20)
+    baseSpeed: 1800, // 20% slower than easy (1500 * 1.20)
     speedIncrease: 0.10, // Same progression as normal
     winWindow: 20,
     alignmentTolerance: 0.35,
-    description: 'Testing: 20% slower start, same progression'
+    description: 'Testing: 20% slower than Easy mode'
   },
   easy: {
     name: 'Easy Mode',
