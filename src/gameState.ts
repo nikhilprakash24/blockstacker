@@ -152,7 +152,7 @@ export function loadHighScore(): number {
 
 // Initialize new game
 export function initializeGame(
-  difficulty: Difficulty = 'carnivale-25',
+  difficulty: Difficulty = 'carnivale-30',
   gridWidth: number = 7,
   spawnMode: SpawnMode = 'resume'
 ): GameState {
