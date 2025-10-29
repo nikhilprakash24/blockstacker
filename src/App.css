@@ -222,7 +222,7 @@ canvas {
   border: 3px solid #00d9ff;
   border-radius: 10px;
   padding: 25px;
-  min-width: 280px;
+  width: 440px;
   box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
 }
 
@@ -488,11 +488,6 @@ canvas {
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1100px) {
-  .score-panel {
-    width: 440px;
-  }
-}
 
 @media (max-width: 600px) {
   .game-title {
