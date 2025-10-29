@@ -136,9 +136,10 @@ header h1 {
 
 .game-layout {
   display: flex;
+  flex-direction: column;
   gap: 30px;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   max-width: 1100px;
   margin: 0 auto;
 }
@@ -488,18 +489,8 @@ canvas {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1100px) {
-  .game-layout {
-    flex-direction: column;
-    align-items: center;
-  }
-
   .score-panel {
     width: 440px;
-    order: 2; /* Ensure score panel comes after game container */
-  }
-
-  .game-container {
-    order: 1; /* Ensure game comes first */
   }
 }
 
