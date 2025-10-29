@@ -1,4 +1,4 @@
-import { GameState, Block, calculateTimePerColumn, calculateOscillationTime, saveHighScore } from './gameState';
+import { GameState, Block, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
 
 // Update position (smooth movement)
 export function updatePosition(state: GameState, deltaTime: number): GameState {
@@ -161,28 +161,67 @@ export function placeBlocks(state: GameState): GameState {
   const minorPrizeReached = currentRow === state.minorPrizeRow;
   const won = currentRow === state.majorPrizeRow;
 
+  // Calculate if this was a perfect placement
+  const isPerfect = aligned.length === state.movingBlocks.length;
+
+  // --- NEW SCORING SYSTEM ---
+  const config = DIFFICULTIES[state.difficulty];
+
+  // 1. Base points: blocks × 10 × level × difficulty multiplier
+  const basePoints = aligned.length * 10 * (currentRow + 1) * config.scoreMultiplier;
+
+  // 2. Speed bonus: Based on how quickly they placed (max 100 points per placement)
+  const timeSinceLastUpdate = state.pressTime - state.lastUpdate;
+  const expectedTime = state.oscillationTime; // One full oscillation
+  const speedRatio = Math.max(0, 1 - (timeSinceLastUpdate / expectedTime));
+  const speedBonus = Math.floor(speedRatio * 100);
+
+  // 3. Combo multiplier: Consecutive perfect placements (up to 5x)
+  const newComboStreak = isPerfect ? state.comboStreak + 1 : 0;
+  const comboMultiplier = Math.min(1 + (newComboStreak * 0.1), 1.5); // 1.0 to 1.5x
+  const comboBonus = Math.floor(basePoints * (comboMultiplier - 1));
+
+  // Total score for this placement
+  const placementScore = Math.floor(basePoints + speedBonus + comboBonus);
+  const newScore = state.score + placementScore;
+  const newTotalSpeedBonus = state.totalSpeedBonus + speedBonus;
+
+  saveHighScore(newScore);
+
   // Create new moving blocks for next level (unless game won)
   let newMovingBlocks: Block[] = [];
-  if (!won) {
-    newMovingBlocks = aligned.map(b => ({
-      column: b.column - Math.min(...aligned.map(ab => ab.column)), // Normalize to start at 0
-      row: currentRow + 1,
-      placed: false
-    }));
-  }
+  let newPosition = state.position;
 
-  // Use (currentRow + 1) for scoring so row 0 gives points
-  const newScore = state.score + (aligned.length * 10 * (currentRow + 1));
-  saveHighScore(newScore);
+  if (!won) {
+    if (state.spawnMode === 'reset-left') {
+      // RESET LEFT: Always start from left edge (position 0)
+      newMovingBlocks = aligned.map(b => ({
+        column: b.column - Math.min(...aligned.map(ab => ab.column)), // Normalize to start at 0
+        row: currentRow + 1,
+        placed: false
+      }));
+      newPosition = 0; // Reset position to left
+    } else {
+      // RESUME: Continue from where blocks were placed
+      newMovingBlocks = aligned.map(b => ({
+        column: b.column - Math.min(...aligned.map(ab => ab.column)), // Normalize to start at 0
+        row: currentRow + 1,
+        placed: false
+      }));
+      // Position stays where it was
+    }
+  }
 
   return {
     ...state,
     blocks: newBlocks,
     movingBlocks: newMovingBlocks,
     level: currentRow + 1,
+    position: newPosition,
     score: newScore,
-    perfectPlacements: aligned.length === state.movingBlocks.length ?
-      state.perfectPlacements + 1 : state.perfectPlacements,
+    perfectPlacements: isPerfect ? state.perfectPlacements + 1 : state.perfectPlacements,
+    comboStreak: newComboStreak,
+    totalSpeedBonus: newTotalSpeedBonus,
     minorPrizeReached: minorPrizeReached || state.minorPrizeReached,
     won: won,
     gameOver: won,

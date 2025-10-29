@@ -2,6 +2,7 @@
 
 export type Difficulty = 'easy' | 'normal' | 'arcade' | 'carnivale-30' | 'carnivale-25' | 'carnivale-20';
 export type Direction = 'left' | 'right';
+export type SpawnMode = 'reset-left' | 'resume'; // Reset to left edge vs continue from last position
 
 export interface Block {
   column: number;           // Grid column position (0-based)
@@ -33,6 +34,8 @@ export interface GameState {
   score: number;
   highScore: number;
   perfectPlacements: number;
+  comboStreak: number;        // Current consecutive perfect placements
+  totalSpeedBonus: number;    // Accumulated speed bonus points
 
   // Prize system
   minorPrizeRow: number;    // 11
@@ -46,6 +49,7 @@ export interface GameState {
   paused: boolean;
   difficulty: Difficulty;
   alignmentTolerance: number; // How close blocks need to be to align (0.0-0.5)
+  spawnMode: SpawnMode;       // How blocks spawn after placement
 }
 
 export interface DifficultyConfig {
@@ -54,6 +58,7 @@ export interface DifficultyConfig {
   speedIncrease: number;
   winWindow: number;
   alignmentTolerance: number; // How close to column center is acceptable (0.0-0.5)
+  scoreMultiplier: number;    // For fair leaderboard comparison across difficulties
   description: string;
 }
 
@@ -64,6 +69,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     speedIncrease: 0.10, // Same progression as normal
     winWindow: 20,
     alignmentTolerance: 0.35,
+    scoreMultiplier: 0.8, // Slowest = lowest multiplier
     description: 'Testing: 30% slower than Easy mode'
   },
   'carnivale-25': {
@@ -72,6 +78,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     speedIncrease: 0.10, // Same progression as normal
     winWindow: 20,
     alignmentTolerance: 0.35,
+    scoreMultiplier: 0.85,
     description: 'Testing: 25% slower than Easy mode'
   },
   'carnivale-20': {
@@ -80,6 +87,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     speedIncrease: 0.10, // Same progression as normal
     winWindow: 20,
     alignmentTolerance: 0.35,
+    scoreMultiplier: 0.9,
     description: 'Testing: 20% slower than Easy mode'
   },
   easy: {
@@ -88,6 +96,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     speedIncrease: 0.05,
     winWindow: 50,
     alignmentTolerance: 0.45, // Very forgiving - almost half a block
+    scoreMultiplier: 1.0, // Baseline multiplier
     description: 'Forgiving timing, slower progression. Great for learning!'
   },
   normal: {
@@ -96,6 +105,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     speedIncrease: 0.10,
     winWindow: 20,
     alignmentTolerance: 0.35, // Moderate tolerance - matches video feel
+    scoreMultiplier: 1.2, // Harder than easy
     description: 'Matches the video timing. Standard practice mode.'
   },
   arcade: {
@@ -104,6 +114,7 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
     speedIncrease: 0.15,
     winWindow: 5,
     alignmentTolerance: 0.25, // Strict but fair
+    scoreMultiplier: 1.5, // Hardest = highest multiplier
     description: 'Challenging! Fast start with aggressive progression.'
   }
 };
@@ -140,7 +151,11 @@ export function loadHighScore(): number {
 }
 
 // Initialize new game
-export function initializeGame(difficulty: Difficulty = 'carnivale-25', gridWidth: number = 7): GameState {
+export function initializeGame(
+  difficulty: Difficulty = 'carnivale-25',
+  gridWidth: number = 7,
+  spawnMode: SpawnMode = 'resume'
+): GameState {
   // Start at row 0 (bottom of grid), level 0
   const initialMovingBlocks: Block[] = [
     { column: 0, row: 0, placed: false },
@@ -165,6 +180,8 @@ export function initializeGame(difficulty: Difficulty = 'carnivale-25', gridWidt
     score: 0,
     highScore: loadHighScore(),
     perfectPlacements: 0,
+    comboStreak: 0,
+    totalSpeedBonus: 0,
     minorPrizeRow: 10, // Row 10 (11th row from bottom, 0-indexed)
     majorPrizeRow: 14, // Row 14 (15th row from bottom, 0-indexed)
     minorPrizeReached: false,
@@ -173,6 +190,7 @@ export function initializeGame(difficulty: Difficulty = 'carnivale-25', gridWidt
     won: false,
     paused: false,
     difficulty: difficulty,
-    alignmentTolerance: config.alignmentTolerance
+    alignmentTolerance: config.alignmentTolerance,
+    spawnMode: spawnMode
   };
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GameState, initializeGame, Difficulty } from './gameState';
+import { GameState, initializeGame, Difficulty, SpawnMode } from './gameState';
 import { gameLoop, handleButtonPress } from './gameLoop';
 import { render } from './rendering';
 import './App.css';
@@ -47,9 +47,18 @@ function App() {
     setGameState(prevState => handleButtonPress(prevState));
   }, []);
 
-  const handleRestart = useCallback((difficulty?: Difficulty) => {
-    setGameState(initializeGame(difficulty || gameState.difficulty));
-  }, [gameState.difficulty]);
+  const handleRestart = useCallback((difficulty?: Difficulty, spawnMode?: SpawnMode) => {
+    setGameState(initializeGame(
+      difficulty || gameState.difficulty,
+      7,
+      spawnMode || gameState.spawnMode
+    ));
+  }, [gameState.difficulty, gameState.spawnMode]);
+
+  const toggleSpawnMode = useCallback(() => {
+    const newSpawnMode: SpawnMode = gameState.spawnMode === 'reset-left' ? 'resume' : 'reset-left';
+    setGameState({ ...gameState, spawnMode: newSpawnMode });
+  }, [gameState]);
 
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (e.code === 'Space' && !gameStateRef.current.gameOver) {
@@ -110,6 +119,27 @@ function App() {
             <button onClick={() => handleRestart('arcade')} className="diff-button">
               Arcade
             </button>
+          </div>
+
+          <div className="spawn-mode-toggle">
+            <label>
+              <strong>Spawn Mode:</strong>
+            </label>
+            <button onClick={toggleSpawnMode} className="toggle-button">
+              {gameState.spawnMode === 'reset-left' ? '⬅️ Reset Left' : '▶️ Resume'}
+            </button>
+          </div>
+
+          <div className="score-breakdown">
+            <div className="score-item">
+              <span>Score:</span> <strong>{gameState.score}</strong>
+            </div>
+            <div className="score-item">
+              <span>Combo:</span> <strong>{gameState.comboStreak}x</strong>
+            </div>
+            <div className="score-item">
+              <span>Speed Bonus:</span> <strong>{gameState.totalSpeedBonus}</strong>
+            </div>
           </div>
         </div>
 

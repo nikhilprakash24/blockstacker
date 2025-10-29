@@ -103,12 +103,20 @@ describe('GameLoop', () => {
       expect(state2.movingBlocks).toHaveLength(0);
     });
 
-    it('should calculate score based on level and blocks placed', () => {
-      const testState = { ...state, position: 2, score: 0 };
+    it('should calculate score with new system (base + speed + combo)', () => {
+      const testState = { ...state, position: 2, score: 0, pressTime: Date.now() };
       const newState = placeBlocks(testState);
 
-      // Score = blocks * 10 * (level + 1) = 3 * 10 * (0 + 1) = 30
-      expect(newState.score).toBe(30);
+      // New scoring: base points × difficulty multiplier + speed bonus + combo bonus
+      // Base: 3 blocks × 10 × (0+1) × 1.2 (normal multiplier) = 36
+      // Speed bonus: 0-100 depending on timing
+      // Combo bonus: first perfect, 1.1x multiplier = ~3 points
+      // Total should be at least 36 (base minimum)
+      expect(newState.score).toBeGreaterThanOrEqual(36);
+      expect(newState.score).toBeLessThan(200); // Sanity check upper bound
+
+      // Check that combo streak increased
+      expect(newState.comboStreak).toBe(1); // First perfect placement
     });
 
     it('should track perfect placements when all blocks align', () => {

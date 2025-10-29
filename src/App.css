@@ -109,6 +109,65 @@ canvas {
   border-color: #a569bd;
 }
 
+.spawn-mode-toggle {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(45, 53, 97, 0.5);
+  border: 2px solid #4a7ba7;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.spawn-mode-toggle label {
+  display: block;
+  color: #00d9ff;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.toggle-button {
+  background: linear-gradient(135deg, #00d9ff 0%, #00a8cc 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.toggle-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 217, 255, 0.6);
+}
+
+.score-breakdown {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(26, 26, 46, 0.7);
+  border: 2px solid #00d9ff;
+  border-radius: 8px;
+}
+
+.score-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: #ffffff;
+  border-bottom: 1px solid rgba(0, 217, 255, 0.2);
+}
+
+.score-item:last-child {
+  border-bottom: none;
+}
+
+.score-item strong {
+  color: #00d9ff;
+  font-size: 1.1rem;
+}
+
 .prize-prompt,
 .victory-screen,
 .game-over-screen {
