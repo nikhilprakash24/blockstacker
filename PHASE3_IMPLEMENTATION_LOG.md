@@ -153,6 +153,41 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
 - **Status**: ✅ Completed
 - **User Request**: User also requested tracking minor/major prize counts and showing memes on prize wins - noted for Task 5.1 (Statistics) implementation
 
+### [00:11] Task 3.1: Time Attack Core Logic
+- **Action**: Implemented countdown timer and Time Attack game logic
+- **Files Modified**:
+  - src/gameLoop.ts (added timer logic and prize system conditionals)
+- **Changes to gameLoop.ts**:
+  - Added `MODE_CONFIGS` import for mode configuration access
+  - Created `updateTimeAttackTimer()` function:
+    - Only runs for gameMode='timeAttack'
+    - Converts deltaTime from ms to seconds
+    - Decrements timeRemaining by elapsed time
+    - Sets gameOver=true when timer reaches 0
+    - Saves high score when time's up
+  - Modified `gameLoop()`:
+    - Call updateTimeAttackTimer() before visual effects
+    - Timer updates on every frame
+  - Modified `placeBlocks()`:
+    - Prize checks now conditional on modeConfig.hasPrizes
+    - minorPrizeReached only true for modes with prizes
+    - won only true for modes with prizes
+    - Time Attack continues beyond row 15 (no height limit)
+- **Game Flow for Time Attack**:
+  - Timer starts at 60 seconds (initialized in gameState.ts)
+  - Counts down in real-time (decrement by deltaTime)
+  - No minor/major prize prompts (hasPrizes = false)
+  - Game continues indefinitely until timer = 0
+  - Game over when timer expires
+  - Score accumulates normally (all scoring systems active)
+- **Build**: ✅ `npm run build` succeeded
+  - JS: 171.87 kB (was 171.59 kB) - +0.28 kB for timer logic
+- **Status**: ✅ Completed
+- **Implementation Notes**:
+  - Timer precision: Updates based on deltaTime (accurate to frame rate)
+  - Prize system disabled via MODE_CONFIGS.hasPrizes flag
+  - No height limit check needed (naturally continues past row 15)
+
 ---
 
-**Last Updated**: 2025-11-10 00:10
+**Last Updated**: 2025-11-10 00:12

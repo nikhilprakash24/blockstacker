@@ -1,4 +1,4 @@
-import { GameState, Block, FallingBlock, SquashEffect, Particle, ScreenShake, ColorFlash, LevelUpEffect, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, Particle, ScreenShake, ColorFlash, LevelUpEffect, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES, MODE_CONFIGS } from './gameState';
 
 // Constants for rendering
 const CELL_SIZE = 40;
@@ -405,9 +405,10 @@ export function placeBlocks(state: GameState): GameState {
     duration: squashDuration
   }));
 
-  // Check for win conditions
-  const minorPrizeReached = currentRow === state.minorPrizeRow;
-  const won = currentRow === state.majorPrizeRow;
+  // Check for win conditions (only for modes with prizes)
+  const modeConfig = MODE_CONFIGS[state.gameMode];
+  const minorPrizeReached = modeConfig.hasPrizes && currentRow === state.minorPrizeRow;
+  const won = modeConfig.hasPrizes && currentRow === state.majorPrizeRow;
 
   // Calculate if this was a perfect placement
   const isPerfect = aligned.length === state.movingBlocks.length;
@@ -546,12 +547,43 @@ export function updateDisplayScore(state: GameState): GameState {
   };
 }
 
+// Update Time Attack timer (countdown)
+export function updateTimeAttackTimer(state: GameState, deltaTime: number): GameState {
+  // Only update timer for Time Attack mode
+  if (state.gameMode !== 'timeAttack' || state.timeRemaining === null) {
+    return state;
+  }
+
+  // Convert deltaTime from ms to seconds
+  const deltaSeconds = deltaTime / 1000;
+  const newTimeRemaining = Math.max(0, state.timeRemaining - deltaSeconds);
+
+  // Check if time's up
+  if (newTimeRemaining === 0 && state.timeRemaining > 0) {
+    // Time's up! Game over
+    saveHighScore(state.score);
+    return {
+      ...state,
+      timeRemaining: 0,
+      gameOver: true
+    };
+  }
+
+  return {
+    ...state,
+    timeRemaining: newTimeRemaining
+  };
+}
+
 // Main game loop
 export function gameLoop(state: GameState): GameState {
   const currentTime = Date.now();
   const deltaTime = currentTime - state.lastUpdate;
 
   let updatedState = state;
+
+  // Update Time Attack timer (if applicable)
+  updatedState = updateTimeAttackTimer(updatedState, deltaTime);
 
   // Update visual effects (always update, even when game is over)
   updatedState = updateFallingBlocks(updatedState, deltaTime);
