@@ -344,6 +344,59 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
   - Ready for stats display UI (Task 5.2)
   - Foundation for meme displays on prize wins (future enhancement)
 
+### [00:21] Task 5.2: Statistics Display UI
+- **Action**: Created comprehensive statistics modal showcasing all tracked stats
+- **Files Modified**:
+  - src/App.tsx (added statistics modal)
+  - src/App.css (added statistics styles)
+- **Changes to App.tsx**:
+  - Import `loadStatistics` from statistics
+  - Add `showStatistics` state
+  - Add "📊 Statistics" button to start screen
+  - Create statistics modal with:
+    - Global stats section (total games, playtime, favorite mode)
+    - Per-mode sections (Classic, Time Attack, Endless)
+    - Dynamic stat cards generated from loaded data
+    - Special highlighting for prize counts (Classic)
+    - Mode-specific stats (height for Endless)
+- **Statistics Displayed**:
+  - **Global**: Total games, total playtime (in minutes), favorite mode icon
+  - **Per Mode**: Games played, best score, average score, perfect placements
+  - **Classic Mode**: 🎁 Minor Prizes Won, 🏆 Major Prizes Won (highlighted!)
+  - **Endless Mode**: 🚀 Best Height (highlighted!)
+- **Changes to App.css**:
+  - Added `.stats-button` with orange gradient (#ff6600)
+  - Added `.stats-modal-content` with 800px max width
+  - Added `.stats-section` for stat groupings
+  - Added `.stats-grid` with responsive auto-fit layout (min 140px)
+  - Added `.stat-card` with hover effects (lift + glow)
+  - Added `.stat-card.highlight` for special stats (gold theme)
+  - Added `.stat-label` and `.stat-value` styling
+  - Prize count cards use gold theme (#ffd700) for prominence
+- **Visual Design**:
+  - Card-based layout with hover effects
+  - Mode-specific colored borders (matches mode theming)
+  - Prize counts highlighted with gold borders and backgrounds
+  - Large 2rem stat values for readability
+  - Glowing text effects for visual interest
+  - Mobile responsive grid layout
+- **User Experience**:
+  - Accessible from start screen (same level as Settings)
+  - Scrollable modal for long stat lists
+  - Close button at bottom
+  - Smooth animations on card hover
+  - Clear visual hierarchy (global → per-mode)
+- **Build**: ✅ `npm run build` succeeded
+  - CSS: 16.31 kB (was 14.83 kB) - +1.48 kB for stats styles
+  - JS: 178.09 kB (was 175.28 kB) - +2.81 kB for stats UI
+- **Status**: ✅ Completed
+- **User Request Fulfilled**: Prize counts prominently displayed with special highlighting!
+- **Implementation Notes**:
+  - Stats load in real-time from localStorage
+  - Shows all 3 implemented modes (Classic, Time Attack, Endless)
+  - Challenge and Zen modes hidden (not implemented yet)
+  - Ready for future enhancements (meme displays, reset button, etc.)
+
 ---
 
-**Last Updated**: 2025-11-10 00:20
+**Last Updated**: 2025-11-10 00:22

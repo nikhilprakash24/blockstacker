@@ -3,6 +3,7 @@ import { GameState, initializeGame, Difficulty, SpawnMode, GameMode, MODE_CONFIG
 import { gameLoop, handleButtonPress } from './gameLoop';
 import { render } from './rendering';
 import { soundManager } from './soundManager';
+import { loadStatistics } from './statistics';
 import './App.css';
 
 function App() {
@@ -11,6 +12,7 @@ function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showModeSelection, setShowModeSelection] = useState(false);
+  const [showStatistics, setShowStatistics] = useState(false);
   const animationRef = useRef<number>();
   const gameStateRef = useRef<GameState>(gameState);
 
@@ -197,6 +199,9 @@ function App() {
                 </button>
                 <button onClick={() => setShowSettings(true)} className="settings-button">
                   Settings
+                </button>
+                <button onClick={() => setShowStatistics(true)} className="stats-button">
+                  📊 Statistics
                 </button>
               </div>
 
@@ -446,6 +451,106 @@ function App() {
             </div>
 
             <button onClick={() => { soundManager.playUISelect(); setShowSettings(false); }} className="close-settings">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showStatistics && (
+        <div className="settings-modal">
+          <div className="settings-content stats-modal-content">
+            <h2>📊 Statistics</h2>
+
+            {(() => {
+              const stats = loadStatistics();
+              const modes: GameMode[] = ['classic', 'timeAttack', 'endless'];
+
+              return (
+                <>
+                  {/* Global Stats */}
+                  <div className="stats-section global-stats">
+                    <h3>Overall Stats</h3>
+                    <div className="stats-grid">
+                      <div className="stat-card">
+                        <div className="stat-label">Total Games</div>
+                        <div className="stat-value">{stats.global.totalGamesPlayed}</div>
+                      </div>
+                      <div className="stat-card">
+                        <div className="stat-label">Total Playtime</div>
+                        <div className="stat-value">{Math.floor(stats.global.totalPlaytime / 60)}m</div>
+                      </div>
+                      <div className="stat-card">
+                        <div className="stat-label">Favorite Mode</div>
+                        <div className="stat-value">
+                          {stats.global.favoriteMode ? MODE_CONFIGS[stats.global.favoriteMode].icon : '—'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Per-Mode Stats */}
+                  {modes.map(mode => {
+                    const modeStats = stats[mode];
+                    const config = MODE_CONFIGS[mode];
+
+                    return (
+                      <div key={mode} className="stats-section mode-stats" style={{ borderColor: config.color }}>
+                        <h3 style={{ color: config.color }}>
+                          {config.icon} {config.name}
+                        </h3>
+
+                        <div className="stats-grid">
+                          <div className="stat-card">
+                            <div className="stat-label">Games Played</div>
+                            <div className="stat-value">{modeStats.gamesPlayed}</div>
+                          </div>
+
+                          <div className="stat-card">
+                            <div className="stat-label">Best Score</div>
+                            <div className="stat-value">{modeStats.bestScore}</div>
+                          </div>
+
+                          <div className="stat-card">
+                            <div className="stat-label">Average Score</div>
+                            <div className="stat-value">{modeStats.averageScore}</div>
+                          </div>
+
+                          <div className="stat-card">
+                            <div className="stat-label">Perfect Placements</div>
+                            <div className="stat-value">{modeStats.perfectPlacements}</div>
+                          </div>
+
+                          {/* Classic mode specific: Prize counts */}
+                          {mode === 'classic' && (
+                            <>
+                              <div className="stat-card highlight">
+                                <div className="stat-label">🎁 Minor Prizes Won</div>
+                                <div className="stat-value">{modeStats.minorPrizesWon}</div>
+                              </div>
+                              <div className="stat-card highlight">
+                                <div className="stat-label">🏆 Major Prizes Won</div>
+                                <div className="stat-value">{modeStats.majorPrizesWon}</div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Endless mode specific */}
+                          {mode === 'endless' && (
+                            <div className="stat-card highlight">
+                              <div className="stat-label">🚀 Best Height</div>
+                              <div className="stat-value">{modeStats.bestHeight}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              );
+            })()}
+
+            <button onClick={() => { soundManager.playUISelect(); setShowStatistics(false); }} className="close-settings">
               Close
             </button>
           </div>
