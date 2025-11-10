@@ -18,6 +18,13 @@ function App() {
     gameStateRef.current = gameState;
   }, [gameState]);
 
+  // Haptic feedback helper (defined early so it can be used in effects)
+  const vibrate = useCallback((pattern: number | number[]) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  }, []);
+
   // Resume audio context on first interaction (click, touch, or keyboard)
   useEffect(() => {
     const resumeAudio = () => {
@@ -38,34 +45,43 @@ function App() {
     };
   }, []);
 
-  // Sound effects for game state changes
+  // Sound effects and haptic feedback for game state changes
   const prevGameStateRef = useRef<GameState>(gameState);
 
   useEffect(() => {
     const prev = prevGameStateRef.current;
     const current = gameState;
 
-    // Game over sound
+    // Game over sound + haptic
     if (!prev.gameOver && current.gameOver && !current.won) {
       soundManager.playGameOver();
+      vibrate([100, 50, 100]); // Buzz pattern
     }
 
-    // Victory sound
+    // Victory sound + haptic
     if (!prev.won && current.won) {
       soundManager.playVictory();
+      vibrate([50, 50, 50, 50, 200]); // Celebration pattern
     }
 
-    // Combo milestone sounds
+    // Combo milestone sounds + haptics
     if (current.comboStreak > prev.comboStreak) {
       if (current.comboStreak === 3 || current.comboStreak === 5 ||
           current.comboStreak === 10 || current.comboStreak >= 15) {
         soundManager.playComboMilestone(current.comboStreak);
+        vibrate(30); // Medium buzz
       }
     }
 
-    // Perfect placement sound
+    // Perfect placement sound + heavy haptic
     if (current.perfectPlacements > prev.perfectPlacements) {
       soundManager.playPerfectPlacement();
+      vibrate(50); // Heavy impact
+    }
+
+    // Level up haptic
+    if (current.level > prev.level && !current.gameOver) {
+      vibrate(40); // Medium-heavy for level up
     }
 
     // Block fall sound (when trimmed blocks are created)
@@ -74,7 +90,7 @@ function App() {
     }
 
     prevGameStateRef.current = current;
-  }, [gameState]);
+  }, [gameState, vibrate]);
 
   // Game loop
   useEffect(() => {
@@ -108,12 +124,16 @@ function App() {
   // Input handling (works for both mouse and touch)
   const handleClick = useCallback(() => {
     if (!gameStarted) return;
+
+    // Light haptic on every tap
+    vibrate(10);
+
     const newState = handleButtonPress(gameState);
     setGameState(newState);
 
     // Play block placement sound (pitch increases with combo)
     soundManager.playBlockPlace(newState.comboStreak);
-  }, [gameStarted, gameState]);
+  }, [gameStarted, gameState, vibrate]);
 
   // Touch handler for canvas (prevents default touch behaviors)
   const handleCanvasTouch = useCallback((e: React.TouchEvent) => {
@@ -244,21 +264,29 @@ function App() {
               {gameState.won && (
                 <div className="victory-screen">
                   <h1>MAJOR PRIZE WON!</h1>
-                  <p className="final-score">Score: {gameState.score}</p>
+                  <p className="final-score">Score: {Math.floor(gameState.displayScore)}</p>
                   <p>Perfect Placements: {gameState.perfectPlacements}</p>
                   <button onClick={() => handleRestart()}>Play Again</button>
                 </div>
               )}
 
               {gameState.gameOver && !gameState.won && (
-                <div className="game-over-screen">
-                  <h2>Game Over</h2>
-                  <p className="final-score">Final Score: {gameState.score}</p>
-                  <p>Level Reached: {gameState.level - 1}/{gameState.majorPrizeRow}</p>
-                  {gameState.score === gameState.highScore && gameState.score > 0 && (
-                    <p className="new-high-score">NEW HIGH SCORE!</p>
-                  )}
-                  <button onClick={() => handleRestart()}>Try Again</button>
+                <div
+                  className="game-over-overlay"
+                  onClick={() => handleRestart()}
+                  onTouchStart={(e) => { e.preventDefault(); handleRestart(); }}
+                >
+                  <div className="game-over-instant">
+                    <div className="score-display">
+                      <div className="score-number">{Math.floor(gameState.displayScore)}</div>
+                      {gameState.score === gameState.highScore && gameState.score > 0 && (
+                        <div className="new-best-badge">🏆 NEW BEST</div>
+                      )}
+                    </div>
+                    <div className="level-display">LEVEL {gameState.level - 1}</div>
+                    <div className="best-display">BEST: {gameState.highScore}</div>
+                    <div className="tap-restart">TAP TO RESTART</div>
+                  </div>
                 </div>
               )}
             </div>
@@ -267,7 +295,7 @@ function App() {
               <h3>Score</h3>
               <div className="score-breakdown">
                 <div className="score-item">
-                  <span>Total:</span> <strong>{gameState.score}</strong>
+                  <span>Total:</span> <strong>{Math.floor(gameState.displayScore)}</strong>
                 </div>
                 <div className="score-item">
                   <span>High Score:</span> <strong>{gameState.highScore}</strong>

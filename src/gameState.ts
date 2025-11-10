@@ -84,6 +84,7 @@ export interface GameState {
 
   // Scoring
   score: number;
+  displayScore: number;       // Animated score that counts up (for visual feedback)
   highScore: number;
   perfectPlacements: number;
   comboStreak: number;        // Current consecutive perfect placements
@@ -237,6 +238,7 @@ export function initializeGame(
     continueTime: 0,
     blockSpawnTime: Date.now(), // Blocks spawn immediately at game start
     score: 0,
+    displayScore: 0, // Starts at 0, will animate to match score
     highScore: loadHighScore(),
     perfectPlacements: 0,
     comboStreak: 0,

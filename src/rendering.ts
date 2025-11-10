@@ -4,6 +4,84 @@ const CELL_SIZE = 40; // pixels
 const GRID_MARGIN_LEFT = 120; // Space for prize labels on left
 const GRID_MARGIN_TOP = 100; // Space for score display on top
 
+// Alignment quality indicator colors (Flappy Bird-style instant feedback)
+type AlignmentQuality = 'perfect' | 'good' | 'warning' | 'danger';
+
+// Calculate alignment quality for visual feedback BEFORE placement
+function calculateAlignmentQuality(
+  movingBlocks: Block[],
+  placedBlocks: Block[],
+  currentPosition: number,
+  currentRow: number,
+  gridWidth: number,
+  tolerance: number
+): AlignmentQuality {
+  // Get base blocks from row below
+  const baseBlocks = placedBlocks.filter(b => b.row === currentRow - 1);
+
+  // First row is always perfect (no base to compare to)
+  if (baseBlocks.length === 0) {
+    return 'perfect';
+  }
+
+  // Calculate platform boundaries
+  const baseColumns = baseBlocks.map(b => b.column);
+  const platformStart = Math.min(...baseColumns);
+  const platformEnd = Math.max(...baseColumns) + 1;
+
+  // Clamp position to grid bounds
+  const maxMovingBlockColumn = Math.max(...movingBlocks.map(b => b.column));
+  const blockSpan = maxMovingBlockColumn + 1;
+  const maxPosition = gridWidth - blockSpan;
+  const clampedPosition = Math.max(0, Math.min(currentPosition, maxPosition));
+
+  // Calculate worst overhang among all moving blocks
+  const maxOverhangAllowed = 0.3 + tolerance;
+  let worstOverhang = 0;
+  let perfectCount = 0;
+
+  movingBlocks.forEach(movingBlock => {
+    const blockLeft = clampedPosition + movingBlock.column;
+    const blockRight = blockLeft + 1;
+
+    const supportedLeft = Math.max(blockLeft, platformStart);
+    const supportedRight = Math.min(blockRight, platformEnd);
+    const supportedWidth = Math.max(0, supportedRight - supportedLeft);
+    const overhang = 1.0 - supportedWidth;
+
+    worstOverhang = Math.max(worstOverhang, overhang);
+
+    // Check if this block is perfectly aligned (fully supported)
+    if (overhang <= 0.05) { // Allow 5% tolerance for "perfect"
+      perfectCount++;
+    }
+  });
+
+  // All blocks perfectly aligned
+  if (perfectCount === movingBlocks.length) {
+    return 'perfect';
+  }
+
+  // Categorize based on worst overhang
+  if (worstOverhang <= maxOverhangAllowed * 0.5) {
+    return 'good'; // Excellent placement
+  } else if (worstOverhang <= maxOverhangAllowed) {
+    return 'warning'; // Acceptable but will trim
+  } else {
+    return 'danger'; // Blocks will fall!
+  }
+}
+
+// Get color for alignment quality
+function getAlignmentColor(quality: AlignmentQuality): string {
+  switch (quality) {
+    case 'perfect': return '#00ff00'; // Bright green
+    case 'good': return '#7fff00'; // Yellow-green
+    case 'warning': return '#ffaa00'; // Orange
+    case 'danger': return '#ff0000'; // Red
+  }
+}
+
 // Main render function
 export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   // Clear canvas
@@ -31,15 +109,26 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
     drawBlock(ctx, block, state.gridHeight, '#00d9ff', squash);
   });
 
-  // Draw moving blocks (with spawn animation)
+  // Draw moving blocks (with spawn animation + alignment indicator)
   // Calculate spawn progress (0-1 over 300ms)
   const spawnDuration = 300; // ms
   const spawnElapsed = Math.min(Date.now() - state.blockSpawnTime, spawnDuration);
   const spawnProgress = spawnElapsed / spawnDuration; // 0 at start, 1 when complete
 
+  // Calculate alignment quality for visual feedback
+  const alignmentQuality = calculateAlignmentQuality(
+    state.movingBlocks,
+    state.blocks,
+    state.position,
+    state.level,
+    state.gridWidth,
+    state.alignmentTolerance
+  );
+  const alignmentColor = getAlignmentColor(alignmentQuality);
+
   state.movingBlocks.forEach((block) => {
     const x = state.position + block.column;
-    drawBlockAt(ctx, x, block.row, state.gridHeight, '#00ffff', spawnProgress);
+    drawBlockAt(ctx, x, block.row, state.gridHeight, '#00ffff', spawnProgress, alignmentColor);
   });
 
   // Draw falling blocks (with opacity fade)
@@ -57,6 +146,7 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
 
   // Draw UI
   drawScore(ctx, state);
+  drawComboIndicator(ctx, state);
 
   // Restore context if screen shake was applied
   if (state.screenShake) {
@@ -160,7 +250,7 @@ function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: numb
   }
 }
 
-function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: number, gridHeight: number, color: string, spawnProgress: number = 1.0): void {
+function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: number, gridHeight: number, color: string, spawnProgress: number = 1.0, alignmentColor?: string): void {
   const x = GRID_MARGIN_LEFT + position * CELL_SIZE;
   const y = GRID_MARGIN_TOP + (gridHeight - 1 - row) * CELL_SIZE;
 
@@ -180,17 +270,30 @@ function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: numbe
     ctx.translate(-centerX, -centerY);
   }
 
-  // Add glow effect for moving blocks
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = color;
+  // Add glow effect for moving blocks (use alignment color if provided)
+  const glowColor = alignmentColor || color;
+  ctx.shadowBlur = 20; // Increased from 15 for more visibility
+  ctx.shadowColor = glowColor;
   ctx.fillStyle = color;
   ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
   ctx.shadowBlur = 0;
 
-  // Add border
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+  // Add alignment indicator border (thick, colored border for feedback)
+  if (alignmentColor) {
+    ctx.strokeStyle = alignmentColor;
+    ctx.lineWidth = 4; // Thick border for visibility
+    ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+    // Add inner white border for contrast
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 4, y + 4, CELL_SIZE - 8, CELL_SIZE - 8);
+  } else {
+    // Default border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+  }
 
   ctx.restore();
 }
@@ -296,11 +399,75 @@ function drawPrizeIndicator(ctx: CanvasRenderingContext2D, state: GameState): vo
 function drawScore(ctx: CanvasRenderingContext2D, state: GameState): void {
   ctx.fillStyle = '#ffffff';
   ctx.font = '20px Arial';
-  ctx.fillText(`Score: ${state.score}`, 20, 30);
+  // Use displayScore for animated count-up effect
+  ctx.fillText(`Score: ${Math.floor(state.displayScore)}`, 20, 30);
   ctx.fillText(`Level: ${state.level}/${state.majorPrizeRow}`, 20, 55);
 
   ctx.font = '14px Arial';
   ctx.fillStyle = '#aaa';
   ctx.fillText(`Best: ${state.highScore}`, 20, 75);
   ctx.fillText(`Perfect: ${state.perfectPlacements}`, 20, 92);
+}
+
+// Draw combo indicator (flow state feedback)
+function drawComboIndicator(ctx: CanvasRenderingContext2D, state: GameState): void {
+  const combo = state.comboStreak;
+
+  // Only show if combo > 0
+  if (combo === 0) return;
+
+  // Position in top-right area
+  const x = ctx.canvas.width - 120;
+  const y = 50;
+
+  ctx.save();
+
+  // Determine combo level and styling
+  let color = '#ffffff';
+  let label = 'COMBO';
+  let intensity = 1.0;
+  let pulse = 1.0;
+
+  if (combo >= 15) {
+    color = '#ff00ff'; // Magenta - ON FIRE!
+    label = '🔥 ON FIRE! 🔥';
+    intensity = 1.5;
+    // Pulsing effect for high combos
+    pulse = 1.0 + Math.sin(Date.now() / 150) * 0.15;
+  } else if (combo >= 10) {
+    color = '#ff6600'; // Orange-red - AMAZING
+    label = 'AMAZING';
+    intensity = 1.3;
+    pulse = 1.0 + Math.sin(Date.now() / 200) * 0.1;
+  } else if (combo >= 5) {
+    color = '#ffd700'; // Gold - GREAT
+    label = 'GREAT';
+    intensity = 1.2;
+  } else if (combo >= 3) {
+    color = '#00ff00'; // Green - NICE
+    label = 'NICE';
+    intensity = 1.1;
+  }
+
+  // Apply pulse scaling
+  ctx.translate(x, y);
+  ctx.scale(pulse, pulse);
+  ctx.translate(-x, -y);
+
+  // Draw label
+  ctx.font = 'bold 16px Arial';
+  ctx.fillStyle = color;
+  ctx.textAlign = 'right';
+  ctx.shadowBlur = 10 * intensity;
+  ctx.shadowColor = color;
+  ctx.fillText(label, x, y);
+
+  // Draw combo number (BIG)
+  ctx.font = `bold ${48 * intensity}px Arial`;
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 20 * intensity;
+  ctx.shadowColor = color;
+  ctx.fillText(`${combo}x`, x, y + 40);
+
+  ctx.restore();
 }

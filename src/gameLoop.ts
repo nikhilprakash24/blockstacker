@@ -519,6 +519,33 @@ export function placeBlocks(state: GameState): GameState {
   };
 }
 
+// Update display score animation (count-up effect)
+export function updateDisplayScore(state: GameState): GameState {
+  const scoreDiff = state.score - state.displayScore;
+
+  // Already at target
+  if (scoreDiff === 0) {
+    return state;
+  }
+
+  // Calculate increment speed (faster for larger differences, minimum 1)
+  // This creates a satisfying count-up that's fast but visible
+  const increment = Math.max(1, Math.ceil(Math.abs(scoreDiff) * 0.15));
+
+  // Move displayScore towards score
+  let newDisplayScore = state.displayScore;
+  if (scoreDiff > 0) {
+    newDisplayScore = Math.min(state.score, state.displayScore + increment);
+  } else {
+    newDisplayScore = Math.max(state.score, state.displayScore - increment);
+  }
+
+  return {
+    ...state,
+    displayScore: newDisplayScore
+  };
+}
+
 // Main game loop
 export function gameLoop(state: GameState): GameState {
   const currentTime = Date.now();
@@ -533,6 +560,7 @@ export function gameLoop(state: GameState): GameState {
   updatedState = updateScreenShake(updatedState, deltaTime);
   updatedState = updateColorFlash(updatedState, deltaTime);
   updatedState = updateLevelUpEffect(updatedState, deltaTime);
+  updatedState = updateDisplayScore(updatedState); // Animate score count-up
 
   // Only update block position if game is active
   if (!state.gameOver && !state.paused) {

@@ -135,33 +135,50 @@ export class SoundManager {
 
   /**
    * Block placement sound - pitch increases with combo
+   * Enhanced with bass impact for Flappy Bird-style satisfaction
    */
   playBlockPlace(comboStreak: number = 0) {
     if (!this.audioContext || !this.enabled) return;
 
+    // LOW BASS THUMP (satisfying impact feeling)
+    this.playTone(80, 0.08, 'sine', 0.35); // Deep boom
+
+    // MID-RANGE CLICK (sharp placement sound)
     const baseFreq = 440; // A4
     const pitch = baseFreq + (comboStreak * 50); // Increase pitch with combo
+    this.playTone(pitch, 0.08, 'square', 0.18);
 
-    this.playTone(pitch, 0.1, 'square', 0.2);
-
-    // Add click sound
+    // HIGH TING (satisfying sparkle)
     setTimeout(() => {
-      this.playTone(pitch * 2, 0.05, 'sine', 0.1);
-    }, 20);
+      this.playTone(pitch * 2, 0.04, 'sine', 0.12);
+    }, 15);
+
+    // SUBTLE REVERB TAIL (adds depth)
+    setTimeout(() => {
+      this.playTone(pitch * 1.5, 0.06, 'sine', 0.08);
+    }, 35);
   }
 
   /**
    * Perfect placement celebration sound
+   * Enhanced with harmonies for richer, more rewarding sound
    */
   playPerfectPlacement() {
     if (!this.audioContext || !this.enabled) return;
 
-    // Ascending arpeggio
+    // Ascending arpeggio with harmonic richness
     const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
     notes.forEach((freq, i) => {
       setTimeout(() => {
-        this.playTone(freq, 0.15, 'sine', 0.25);
-      }, i * 50);
+        // Main note
+        this.playTone(freq, 0.2, 'sine', 0.3);
+        // Octave harmony for richness
+        this.playTone(freq * 2, 0.15, 'sine', 0.15);
+        // Sub-bass for power (on final note)
+        if (i === notes.length - 1) {
+          this.playTone(freq / 2, 0.25, 'sine', 0.2);
+        }
+      }, i * 40);
     });
   }
 

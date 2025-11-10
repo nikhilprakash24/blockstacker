@@ -560,8 +560,7 @@ canvas {
 
 /* ===== PRIZE & GAME OVER MODALS ===== */
 .prize-prompt,
-.victory-screen,
-.game-over-screen {
+.victory-screen {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -574,6 +573,78 @@ canvas {
   z-index: 10;
   min-width: 300px;
   animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ===== INSTANT RESTART GAME OVER ===== */
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  cursor: pointer;
+  animation: fadeIn 0.2s ease;
+}
+
+.game-over-instant {
+  text-align: center;
+  pointer-events: none;
+}
+
+.score-display {
+  margin-bottom: 20px;
+}
+
+.score-number {
+  font-size: 6rem;
+  font-weight: bold;
+  color: #00d9ff;
+  text-shadow: 0 0 30px rgba(0, 217, 255, 0.8);
+  line-height: 1;
+}
+
+.new-best-badge {
+  font-size: 1.5rem;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  margin-top: 10px;
+  animation: pulse 1s infinite;
+}
+
+.level-display {
+  font-size: 2rem;
+  color: #ffffff;
+  margin-bottom: 10px;
+  opacity: 0.9;
+}
+
+.best-display {
+  font-size: 1.5rem;
+  color: #9b59b6;
+  margin-bottom: 30px;
+  opacity: 0.8;
+}
+
+.tap-restart {
+  font-size: 1.3rem;
+  color: #00ff00;
+  text-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+  animation: pulseFast 0.8s infinite;
+  letter-spacing: 2px;
+}
+
+@keyframes pulseFast {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes scaleIn {
