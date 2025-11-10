@@ -256,6 +256,37 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
   - Score system: Uses existing scoring (height-based multiplier already in place)
   - Performance: Camera is just a transform, no rendering overhead
 
+### [00:17] Task 4.2: Endless Mode UI - Height Display
+- **Action**: Added height display with current and best height tracking
+- **Files Modified**:
+  - src/rendering.ts (added height display function)
+- **Changes to rendering.ts**:
+  - Modified `render()` function:
+    - Call drawEndlessHeight() for gameMode='endless'
+    - Render after combo indicator, before context restore
+  - Created `drawEndlessHeight()` function:
+    - Position: Top center (same area as Time Attack timer)
+    - Three-line layout:
+      - "HEIGHT" label (24px, white)
+      - Current height value (64px, purple #9b59b6)
+      - "Best: X" subtext (20px, white)
+    - Purple theme matches Endless mode color (#9b59b6)
+    - Glowing shadow effects for visibility
+- **Visual Features**:
+  - Large 64px font for current height
+  - Prominent display matches Time Attack timer style
+  - Best height always visible below current
+  - Purple theme consistent with mode branding
+  - Non-intrusive top-center positioning
+- **Build**: ✅ `npm run build` succeeded
+  - JS: 173.24 kB (was 172.71 kB) - +0.53 kB for height UI
+- **Status**: ✅ Completed
+- **Implementation Notes**:
+  - Mode indicator (from Task 2.1) shows "🚀 Endless Mode"
+  - Height = level (same value, different presentation)
+  - Best height persists across game sessions (from maxHeightReached)
+  - Consistent UI pattern with Time Attack timer
+
 ---
 
-**Last Updated**: 2025-11-10 00:16
+**Last Updated**: 2025-11-10 00:18

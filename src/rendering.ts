@@ -161,6 +161,11 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
     drawTimeAttackTimer(ctx, state.timeRemaining);
   }
 
+  // Draw Endless mode height display if applicable
+  if (state.gameMode === 'endless') {
+    drawEndlessHeight(ctx, state.level, state.maxHeightReached);
+  }
+
   // Restore context (camera offset + screen shake)
   ctx.restore();
 
@@ -267,6 +272,39 @@ function drawTimeAttackTimer(ctx: CanvasRenderingContext2D, timeRemaining: numbe
   ctx.shadowBlur = 30;
   ctx.shadowColor = shadowColor;
   ctx.fillText(displayTime, centerX, timerY + 20);
+
+  ctx.restore();
+}
+
+function drawEndlessHeight(ctx: CanvasRenderingContext2D, currentHeight: number, maxHeight: number): void {
+  ctx.save();
+
+  // Position: Top center of canvas (same area as timer)
+  const centerX = ctx.canvas.width / 2;
+  const heightY = 50;
+
+  // Draw "HEIGHT" label
+  ctx.font = 'bold 24px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = '#9b59b6'; // Purple theme for Endless
+  ctx.fillText('HEIGHT', centerX, heightY - 25);
+
+  // Draw current height (large and prominent)
+  ctx.font = 'bold 64px Arial';
+  ctx.fillStyle = '#9b59b6'; // Purple theme for Endless
+  ctx.shadowBlur = 30;
+  ctx.shadowColor = '#9b59b6';
+  ctx.fillText(currentHeight.toString(), centerX, heightY + 20);
+
+  // Draw max height below (smaller)
+  ctx.font = 'bold 20px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = '#9b59b6';
+  ctx.fillText(`Best: ${maxHeight}`, centerX, heightY + 55);
 
   ctx.restore();
 }
