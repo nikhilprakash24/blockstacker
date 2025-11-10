@@ -1,4 +1,4 @@
-import { GameState, Block, FallingBlock } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect } from './gameState';
 
 const CELL_SIZE = 40; // pixels
 const GRID_MARGIN_LEFT = 120; // Space for prize labels on left
@@ -16,9 +16,13 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   // Draw grid
   drawGrid(ctx, state);
 
-  // Draw placed blocks
+  // Draw placed blocks (with squash effects if active)
   state.blocks.forEach(block => {
-    drawBlock(ctx, block, state.gridHeight, '#00d9ff');
+    // Find squash effect for this block
+    const squash = state.squashEffects.find(
+      effect => effect.column === block.column && effect.row === block.row
+    );
+    drawBlock(ctx, block, state.gridHeight, '#00d9ff', squash);
   });
 
   // Draw moving blocks
@@ -53,9 +57,25 @@ function drawGrid(ctx: CanvasRenderingContext2D, state: GameState): void {
   }
 }
 
-function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: number, color: string): void {
+function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: number, color: string, squash?: SquashEffect): void {
   const x = GRID_MARGIN_LEFT + block.column * CELL_SIZE;
   const y = GRID_MARGIN_TOP + (gridHeight - 1 - block.row) * CELL_SIZE; // gridHeight - 1 - row for bottom-up
+
+  // Apply squash effect if present
+  if (squash && squash.intensity > 0) {
+    const centerX = x + CELL_SIZE / 2;
+    const centerY = y + CELL_SIZE / 2;
+
+    // Squash: wider and shorter (scaleX > 1, scaleY < 1)
+    const squashAmount = squash.intensity * 0.3; // Max 30% squash
+    const scaleX = 1 + squashAmount;
+    const scaleY = 1 - squashAmount;
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.scale(scaleX, scaleY);
+    ctx.translate(-centerX, -centerY);
+  }
 
   ctx.fillStyle = color;
   ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
@@ -64,6 +84,11 @@ function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: numb
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+  // Restore context if squash was applied
+  if (squash && squash.intensity > 0) {
+    ctx.restore();
+  }
 }
 
 function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: number, gridHeight: number, color: string): void {

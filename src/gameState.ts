@@ -17,6 +17,13 @@ export interface FallingBlock {
   opacity: number;          // 0-1 for fade out effect
 }
 
+export interface SquashEffect {
+  column: number;           // Grid column
+  row: number;             // Grid row
+  intensity: number;        // 0-1, 1 = maximum squash
+  duration: number;         // Remaining duration in ms
+}
+
 export interface GameState {
   // Grid configuration
   gridWidth: number;        // 7 for mobile, 11 for arcade
@@ -27,6 +34,7 @@ export interface GameState {
   blocks: Block[];          // Currently placed blocks
   movingBlocks: Block[];    // Blocks currently oscillating
   fallingBlocks: FallingBlock[]; // Blocks falling off (trimmed overhangs)
+  squashEffects: SquashEffect[]; // Visual squash effects on block placement
 
   // Movement
   oscillationTime: number;  // Current oscillation duration (ms)
@@ -180,6 +188,7 @@ export function initializeGame(
     blocks: [],
     movingBlocks: initialMovingBlocks,
     fallingBlocks: [],
+    squashEffects: [],
     oscillationTime: calculateOscillationTime(1, difficulty), // Still use 1 for speed calc
     direction: 'right',
     position: 0,

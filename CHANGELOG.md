@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Falling blocks rendered in red/orange (#ff4444) to distinguish from active blocks
   - Blocks removed from render when they fall below row -2
 
+- **Block Placement Squash Animation** (2025-11-10)
+  - Added `SquashEffect` interface with column, row, intensity, duration
+  - Blocks squash on placement (wider + shorter) for satisfying feedback
+  - 200ms animation duration with ease-out timing
+  - Maximum 30% squash (scaleX: 1.3, scaleY: 0.7 at peak)
+  - Squash effects applied via canvas transform
+  - Multiple blocks can squash simultaneously
+
 ### Changed
 - **Game Loop Enhancement** (2025-11-10)
   - `gameLoop()` now updates falling blocks even when game is over
@@ -33,10 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **New Functions** (2025-11-10)
   - `updateFallingBlocks(state, deltaTime)`: Applies gravity and fade to falling blocks
   - `drawFallingBlock(ctx, fallingBlock, gridHeight)`: Renders falling block with opacity
+  - `updateSquashEffects(state, deltaTime)`: Decreases squash intensity over time with ease-out
+  - Modified `drawBlock(...)`: Now accepts optional squash parameter for scale transform
 
 - **Module Exports** (2025-11-10)
-  - Exported `FallingBlock` type from gameState.ts
-  - Imported `FallingBlock` in gameLoop.ts and rendering.ts
+  - Exported `FallingBlock` and `SquashEffect` types from gameState.ts
+  - Imported in gameLoop.ts and rendering.ts
+
+- **Game State Updates** (2025-11-10)
+  - Added `squashEffects: SquashEffect[]` to GameState
+  - `placeBlocks()` creates squash effects for newly placed blocks
+  - `gameLoop()` updates squash effects on every frame
 
 ### Fixed
 - **Test Suite** (2025-11-10)

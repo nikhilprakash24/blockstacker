@@ -1,4 +1,23 @@
-import { GameState, Block, FallingBlock, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+
+// Update squash effects (decrease intensity over time)
+export function updateSquashEffects(state: GameState, deltaTime: number): GameState {
+  const squashDuration = 200; // Total squash animation duration in ms
+
+  const updatedSquashEffects = state.squashEffects
+    .map(effect => ({
+      ...effect,
+      duration: effect.duration - deltaTime,
+      // Ease out: intensity decreases as duration runs out
+      intensity: Math.max(0, effect.duration - deltaTime) / squashDuration
+    }))
+    .filter(effect => effect.duration > 0); // Remove completed effects
+
+  return {
+    ...state,
+    squashEffects: updatedSquashEffects
+  };
+}
 
 // Update falling blocks (gravity + fade effect)
 export function updateFallingBlocks(state: GameState, deltaTime: number): GameState {
@@ -186,6 +205,15 @@ export function placeBlocks(state: GameState): GameState {
     opacity: 1.0 // Start fully visible
   }));
 
+  // Create squash effects for newly placed blocks
+  const squashDuration = 200; // ms
+  const newSquashEffects: SquashEffect[] = aligned.map(block => ({
+    column: block.column,
+    row: block.row,
+    intensity: 1.0, // Start at maximum squash
+    duration: squashDuration
+  }));
+
   // Check for win conditions
   const minorPrizeReached = currentRow === state.minorPrizeRow;
   const won = currentRow === state.majorPrizeRow;
@@ -246,6 +274,7 @@ export function placeBlocks(state: GameState): GameState {
     blocks: newBlocks,
     movingBlocks: newMovingBlocks,
     fallingBlocks: [...state.fallingBlocks, ...newFallingBlocks], // Add new falling blocks
+    squashEffects: [...state.squashEffects, ...newSquashEffects], // Add new squash effects
     level: currentRow + 1,
     position: newPosition,
     score: newScore,
@@ -267,8 +296,9 @@ export function gameLoop(state: GameState): GameState {
 
   let updatedState = state;
 
-  // Update falling blocks (always update, even when game is over)
+  // Update visual effects (always update, even when game is over)
   updatedState = updateFallingBlocks(updatedState, deltaTime);
+  updatedState = updateSquashEffects(updatedState, deltaTime);
 
   // Only update block position if game is active
   if (!state.gameOver && !state.paused) {
