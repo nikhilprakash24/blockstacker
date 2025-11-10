@@ -10,6 +10,13 @@ export interface Block {
   placed: boolean;         // Is this block placed or moving?
 }
 
+export interface FallingBlock {
+  column: number;           // X position (can be decimal)
+  row: number;             // Y position (can be decimal, increases as it falls)
+  velocity: number;         // Falling velocity (rows per second)
+  opacity: number;          // 0-1 for fade out effect
+}
+
 export interface GameState {
   // Grid configuration
   gridWidth: number;        // 7 for mobile, 11 for arcade
@@ -19,6 +26,7 @@ export interface GameState {
   level: number;            // Current row (1-15)
   blocks: Block[];          // Currently placed blocks
   movingBlocks: Block[];    // Blocks currently oscillating
+  fallingBlocks: FallingBlock[]; // Blocks falling off (trimmed overhangs)
 
   // Movement
   oscillationTime: number;  // Current oscillation duration (ms)
@@ -171,6 +179,7 @@ export function initializeGame(
     level: 0, // Start at level 0 (row 0 = bottom)
     blocks: [],
     movingBlocks: initialMovingBlocks,
+    fallingBlocks: [],
     oscillationTime: calculateOscillationTime(1, difficulty), // Still use 1 for speed calc
     direction: 'right',
     position: 0,

@@ -1,4 +1,4 @@
-import { GameState, Block } from './gameState';
+import { GameState, Block, FallingBlock } from './gameState';
 
 const CELL_SIZE = 40; // pixels
 const GRID_MARGIN_LEFT = 120; // Space for prize labels on left
@@ -25,6 +25,11 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   state.movingBlocks.forEach((block) => {
     const x = state.position + block.column;
     drawBlockAt(ctx, x, block.row, state.gridHeight, '#00ffff');
+  });
+
+  // Draw falling blocks (with opacity fade)
+  state.fallingBlocks.forEach(fallingBlock => {
+    drawFallingBlock(ctx, fallingBlock, state.gridHeight);
   });
 
   // Draw prize indicators
@@ -76,6 +81,33 @@ function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: numbe
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+}
+
+function drawFallingBlock(ctx: CanvasRenderingContext2D, fallingBlock: FallingBlock, gridHeight: number): void {
+  const x = GRID_MARGIN_LEFT + fallingBlock.column * CELL_SIZE;
+  const y = GRID_MARGIN_TOP + (gridHeight - 1 - fallingBlock.row) * CELL_SIZE;
+
+  // Save current context state
+  ctx.save();
+
+  // Set opacity for fade effect
+  ctx.globalAlpha = fallingBlock.opacity;
+
+  // Draw with red/orange color to indicate falling
+  const color = '#ff4444';
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = color;
+  ctx.fillStyle = color;
+  ctx.fillRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+  ctx.shadowBlur = 0;
+
+  // Add border
+  ctx.strokeStyle = '#ffaaaa';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+  // Restore context state
+  ctx.restore();
 }
 
 function drawPrizeIndicator(ctx: CanvasRenderingContext2D, state: GameState): void {

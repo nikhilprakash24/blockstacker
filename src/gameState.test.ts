@@ -6,8 +6,6 @@ import {
   saveHighScore,
   loadHighScore,
   DIFFICULTIES,
-  type GameState,
-  type Difficulty,
 } from './gameState';
 
 describe('GameState', () => {

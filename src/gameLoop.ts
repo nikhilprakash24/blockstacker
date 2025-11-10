@@ -1,4 +1,25 @@
-import { GameState, Block, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+import { GameState, Block, FallingBlock, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+
+// Update falling blocks (gravity + fade effect)
+export function updateFallingBlocks(state: GameState, deltaTime: number): GameState {
+  const deltaSeconds = deltaTime / 1000;
+  const gravity = 8; // rows per second^2
+  const fadeSpeed = 2.0; // opacity per second
+
+  const updatedFallingBlocks = state.fallingBlocks
+    .map(fb => ({
+      ...fb,
+      velocity: fb.velocity + gravity * deltaSeconds, // Apply gravity
+      row: fb.row - fb.velocity * deltaSeconds, // Move down (row decreases as it falls)
+      opacity: Math.max(0, fb.opacity - fadeSpeed * deltaSeconds) // Fade out
+    }))
+    .filter(fb => fb.row > -2); // Remove blocks that fell off screen
+
+  return {
+    ...state,
+    fallingBlocks: updatedFallingBlocks
+  };
+}
 
 // Update position (smooth movement)
 export function updatePosition(state: GameState, deltaTime: number): GameState {
@@ -157,6 +178,14 @@ export function placeBlocks(state: GameState): GameState {
   // Add aligned blocks to placed blocks
   const newBlocks = [...state.blocks, ...aligned];
 
+  // Convert trimmed blocks to falling blocks with animation state
+  const newFallingBlocks: FallingBlock[] = trimmed.map(block => ({
+    column: block.column, // Keep decimal position
+    row: currentRow,
+    velocity: 0, // Start with zero velocity, gravity will accelerate
+    opacity: 1.0 // Start fully visible
+  }));
+
   // Check for win conditions
   const minorPrizeReached = currentRow === state.minorPrizeRow;
   const won = currentRow === state.majorPrizeRow;
@@ -216,6 +245,7 @@ export function placeBlocks(state: GameState): GameState {
     ...state,
     blocks: newBlocks,
     movingBlocks: newMovingBlocks,
+    fallingBlocks: [...state.fallingBlocks, ...newFallingBlocks], // Add new falling blocks
     level: currentRow + 1,
     position: newPosition,
     score: newScore,
@@ -232,15 +262,18 @@ export function placeBlocks(state: GameState): GameState {
 
 // Main game loop
 export function gameLoop(state: GameState): GameState {
-  if (state.gameOver || state.paused) {
-    return state;
-  }
-
   const currentTime = Date.now();
   const deltaTime = currentTime - state.lastUpdate;
 
-  // Update block position
-  const updatedState = updatePosition(state, deltaTime);
+  let updatedState = state;
+
+  // Update falling blocks (always update, even when game is over)
+  updatedState = updateFallingBlocks(updatedState, deltaTime);
+
+  // Only update block position if game is active
+  if (!state.gameOver && !state.paused) {
+    updatedState = updatePosition(updatedState, deltaTime);
+  }
 
   return {
     ...updatedState,
