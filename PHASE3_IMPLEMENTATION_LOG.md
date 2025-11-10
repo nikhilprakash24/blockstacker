@@ -220,6 +220,42 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
   - Timer positioned to avoid blocking gameplay grid
   - Mode indicator badge (from Task 2.1) already shows "⏱️ Time Attack"
 
+### [00:15] Task 4.1: Endless Mode Core Logic
+- **Action**: Implemented infinite height gameplay with camera panning and height tracking
+- **Files Modified**:
+  - src/gameLoop.ts (added camera and height logic)
+  - src/rendering.ts (added camera offset rendering)
+- **Changes to gameLoop.ts**:
+  - Modified `placeBlocks()` function:
+    - Track `maxHeightReached` (max of current height or previous max)
+    - Calculate `cameraOffsetY` for Endless mode (hasHeightLimit=false):
+      - Keep player centered at ~row 10 (5 rows from top)
+      - Camera offset = (currentRow + 1 - 10)
+      - Only apply when player above row 10
+    - Update GameState with camera and height fields
+  - Prize system already disabled (hasPrizes=false in MODE_CONFIGS)
+  - No height limit enforcement needed (game continues naturally)
+- **Changes to rendering.ts**:
+  - Modified `render()` function:
+    - Apply camera offset via ctx.translate() BEFORE screen shake
+    - Translate canvas by (cameraOffsetY * CELL_SIZE) pixels
+    - Positive offset = translate down (show higher rows)
+    - Restore context after rendering (camera + shake combined)
+  - Camera affects all rendered elements (grid, blocks, particles, UI)
+- **Camera System**:
+  - Centered view: Player stays around row 10 (middle of 15-row viewport)
+  - Smooth tracking: Camera follows immediately (no lag or smoothing)
+  - Infinite extension: No upper bound on camera or height
+  - Performance: Uses canvas translation (O(1) operation)
+- **Build**: ✅ `npm run build` succeeded
+  - JS: 172.71 kB (was 172.51 kB) - +0.20 kB for camera logic
+- **Status**: ✅ Completed
+- **Implementation Notes**:
+  - Follows Decision D003: Fixed canvas with camera offset
+  - Progressive difficulty: Already handled by calculateOscillationTime() (speed increases with level)
+  - Score system: Uses existing scoring (height-based multiplier already in place)
+  - Performance: Camera is just a transform, no rendering overhead
+
 ---
 
-**Last Updated**: 2025-11-10 00:14
+**Last Updated**: 2025-11-10 00:16

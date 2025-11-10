@@ -495,6 +495,22 @@ export function placeBlocks(state: GameState): GameState {
     }
   }
 
+  // Update Endless mode camera and height tracking
+  const newMaxHeightReached = Math.max(state.maxHeightReached, currentRow + 1);
+
+  // For Endless mode, pan camera up as player progresses
+  // Camera offset keeps player centered (show ~5 rows below current position)
+  let newCameraOffsetY = state.cameraOffsetY;
+  if (modeConfig.hasHeightLimit === false) {
+    // Calculate desired camera position to keep player roughly centered
+    // gridHeight = 15, so show player around row 10 (5 rows from top)
+    const targetRow = currentRow + 1 - 10; // Keep 10 rows visible below
+    if (targetRow > 0) {
+      // Camera offset in grid rows (positive = move up)
+      newCameraOffsetY = targetRow;
+    }
+  }
+
   return {
     ...state,
     blocks: newBlocks,
@@ -516,7 +532,10 @@ export function placeBlocks(state: GameState): GameState {
     won: won,
     gameOver: won,
     // Use (currentRow + 2) for speed calc (next level after placement)
-    oscillationTime: calculateOscillationTime(currentRow + 2, state.difficulty)
+    oscillationTime: calculateOscillationTime(currentRow + 2, state.difficulty),
+    // Endless mode fields
+    cameraOffsetY: newCameraOffsetY,
+    maxHeightReached: newMaxHeightReached
   };
 }
 

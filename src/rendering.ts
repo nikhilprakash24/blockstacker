@@ -91,9 +91,17 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+  // Apply camera offset for Endless mode (before screen shake)
+  ctx.save();
+  if (state.cameraOffsetY > 0) {
+    // Translate canvas down by camera offset (in pixels)
+    // Positive cameraOffsetY means we're higher up, so translate down to show higher rows
+    const cameraPixelOffset = state.cameraOffsetY * CELL_SIZE;
+    ctx.translate(0, cameraPixelOffset);
+  }
+
   // Apply screen shake offset if present
   if (state.screenShake) {
-    ctx.save();
     ctx.translate(state.screenShake.offsetX, state.screenShake.offsetY);
   }
 
@@ -153,10 +161,8 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
     drawTimeAttackTimer(ctx, state.timeRemaining);
   }
 
-  // Restore context if screen shake was applied
-  if (state.screenShake) {
-    ctx.restore();
-  }
+  // Restore context (camera offset + screen shake)
+  ctx.restore();
 
   // Draw color flash overlay (after screen shake restore, so it covers entire screen)
   if (state.colorFlash) {
