@@ -121,6 +121,38 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
 - **Status**: ✅ Completed
 - **Implementation Notes**: Follows Decision D002 (card grid UI pattern)
 
+### [00:09] Task 2.1: Brand as Classic Mode
+- **Action**: Added mode indicator badge to gameplay header
+- **Files Modified**:
+  - src/App.tsx (added mode badge to header)
+  - src/App.css (added mode badge styles)
+- **Changes to App.tsx**:
+  - Added `.mode-indicator` div below header h1
+  - Added `.mode-badge-gameplay` span displaying current mode:
+    - Shows mode icon + mode name (e.g., "🎪 Classic Mode")
+    - Dynamic border and text color from MODE_CONFIGS
+    - Visible during all gameplay
+- **Changes to App.css**:
+  - Added `.mode-indicator` container
+  - Added `.mode-badge-gameplay` with:
+    - Semi-transparent black background
+    - 2px colored border (mode-specific)
+    - Pill-shaped (25px border-radius)
+    - Glowing text shadow matching mode color
+    - Subtle pulse animation (2s infinite)
+  - Added `modeBadgePulse` keyframe animation
+  - Added mobile responsive styles (smaller font on <600px)
+- **Visual Features**:
+  - Mode badge prominently displays current game mode
+  - Color-coded per mode (Classic: cyan, Time Attack: orange, etc.)
+  - Subtle pulse animation draws attention without distraction
+  - Always visible during gameplay
+- **Build**: ✅ `npm run build` succeeded
+  - CSS: 14.83 kB (was 14.38 kB) - +0.45 kB
+  - JS: 171.59 kB (was 171.36 kB) - +0.23 kB
+- **Status**: ✅ Completed
+- **User Request**: User also requested tracking minor/major prize counts and showing memes on prize wins - noted for Task 5.1 (Statistics) implementation
+
 ---
 
-**Last Updated**: 2025-11-10 00:08
+**Last Updated**: 2025-11-10 00:10

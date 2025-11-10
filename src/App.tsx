@@ -250,6 +250,11 @@ function App() {
         <>
           <header>
             <h1>Block Stacker - Carnivale</h1>
+            <div className="mode-indicator">
+              <span className="mode-badge-gameplay" style={{ borderColor: MODE_CONFIGS[gameState.gameMode].color, color: MODE_CONFIGS[gameState.gameMode].color }}>
+                {MODE_CONFIGS[gameState.gameMode].icon} {MODE_CONFIGS[gameState.gameMode].name}
+              </span>
+            </div>
           </header>
 
           <div className="game-layout">
