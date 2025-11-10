@@ -13,6 +13,12 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
+  // Apply screen shake offset if present
+  if (state.screenShake) {
+    ctx.save();
+    ctx.translate(state.screenShake.offsetX, state.screenShake.offsetY);
+  }
+
   // Draw grid
   drawGrid(ctx, state);
 
@@ -46,6 +52,20 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
 
   // Draw UI
   drawScore(ctx, state);
+
+  // Restore context if screen shake was applied
+  if (state.screenShake) {
+    ctx.restore();
+  }
+
+  // Draw color flash overlay (after screen shake restore, so it covers entire screen)
+  if (state.colorFlash) {
+    ctx.save();
+    ctx.globalAlpha = state.colorFlash.opacity;
+    ctx.fillStyle = state.colorFlash.color;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.restore();
+  }
 }
 
 function drawGrid(ctx: CanvasRenderingContext2D, state: GameState): void {

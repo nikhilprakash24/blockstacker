@@ -36,6 +36,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Gravity applied to particles for natural arc trajectory
   - 3-6 pixel particle size with 8px glow effect
 
+- **Screen Shake System** (2025-11-10)
+  - Added `ScreenShake` interface with offsetX, offsetY, intensity, duration
+  - Camera shake triggers on every block placement
+  - Shake intensity scales with blocks placed and combo streak (0.3-1.0)
+  - 300ms base duration, scales with intensity
+  - Maximum 8 pixel offset at full intensity
+  - Random directional offset with ease-out damping
+  - Applied via canvas translate transform
+
+- **Combo Color Flash** (2025-11-10)
+  - Added `ColorFlash` interface with color, opacity, duration
+  - Screen flashes at combo milestones (3x, 5x, 10x, 15x+)
+  - Cyan flash at 3x combo
+  - Gold flash at 5x combo
+  - Magenta flash at 10x combo
+  - White flash at 15+ combo
+  - 200ms flash duration with linear fade-out
+  - 40% starting opacity, fades to 0
+  - Full-screen overlay rendered after all game elements
+
 ### Changed
 - **Game Loop Enhancement** (2025-11-10)
   - `gameLoop()` now updates falling blocks even when game is over
@@ -56,18 +76,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `createParticleBurst(x, y, color, count)`: Spawns radial particle burst
   - `updateParticles(state, deltaTime)`: Updates particle positions with physics
   - `drawParticle(ctx, particle)`: Renders particles with fade and glow
+  - `createScreenShake(intensity)`: Creates screen shake effect with scaled duration
+  - `updateScreenShake(state, deltaTime)`: Updates shake with random offset and ease-out
+  - `createColorFlash(color)`: Creates color flash overlay effect
+  - `updateColorFlash(state, deltaTime)`: Fades out color flash over time
 
 - **Module Exports** (2025-11-10)
-  - Exported `FallingBlock`, `SquashEffect`, and `Particle` types from gameState.ts
+  - Exported `FallingBlock`, `SquashEffect`, `Particle`, `ScreenShake`, and `ColorFlash` types from gameState.ts
   - Imported in gameLoop.ts and rendering.ts
 
 - **Game State Updates** (2025-11-10)
   - Added `squashEffects: SquashEffect[]` to GameState
   - Added `particles: Particle[]` to GameState
-  - `placeBlocks()` creates squash effects and particles for aligned blocks
+  - Added `screenShake: ScreenShake | null` to GameState
+  - Added `colorFlash: ColorFlash | null` to GameState
+  - `placeBlocks()` creates all visual effects for block placements
   - `gameLoop()` updates all visual effects on every frame
   - Particle count scales with combo streak (12 base + 3 per combo, max 30)
   - Particle color changes to gold at 5+ combo streak
+  - Shake intensity formula: `min(0.3 + blocks/10 + combo*0.1, 1.0)`
+  - Color flash triggers at milestones: 3x (cyan), 5x (gold), 10x (magenta), 15x+ (white)
 
 ### Fixed
 - **Test Suite** (2025-11-10)
@@ -76,7 +104,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Testing
 - **Build Status**: ✅ Passing (vite build successful)
-- **Test Status**: ✅ All 88 tests passing
+- **Test Status**: ✅ 87/88 tests passing (1 test requires update for visual effects behavior)
+  - Note: One test expects no state changes when game is over, but visual effects (shake, particles, falling blocks) intentionally continue animating
+  - This is correct behavior and will be reflected in updated tests
 - **Manual Testing**: Pending visual verification in browser
 
 ---

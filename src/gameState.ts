@@ -35,6 +35,19 @@ export interface Particle {
   maxLifetime: number;      // Original lifetime for fade calculation
 }
 
+export interface ScreenShake {
+  offsetX: number;          // Current X offset in pixels
+  offsetY: number;          // Current Y offset in pixels
+  intensity: number;        // Current shake intensity (0-1)
+  duration: number;         // Remaining duration in ms
+}
+
+export interface ColorFlash {
+  color: string;            // Flash color
+  opacity: number;          // Current opacity (0-1)
+  duration: number;         // Remaining duration in ms
+}
+
 export interface GameState {
   // Grid configuration
   gridWidth: number;        // 7 for mobile, 11 for arcade
@@ -47,6 +60,8 @@ export interface GameState {
   fallingBlocks: FallingBlock[]; // Blocks falling off (trimmed overhangs)
   squashEffects: SquashEffect[]; // Visual squash effects on block placement
   particles: Particle[];    // Particle effects (bursts, celebrations)
+  screenShake: ScreenShake | null; // Camera shake effect
+  colorFlash: ColorFlash | null; // Screen color flash effect
 
   // Movement
   oscillationTime: number;  // Current oscillation duration (ms)
@@ -202,6 +217,8 @@ export function initializeGame(
     fallingBlocks: [],
     squashEffects: [],
     particles: [],
+    screenShake: null,
+    colorFlash: null,
     oscillationTime: calculateOscillationTime(1, difficulty), // Still use 1 for speed calc
     direction: 'right',
     position: 0,

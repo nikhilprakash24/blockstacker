@@ -1,9 +1,98 @@
-import { GameState, Block, FallingBlock, SquashEffect, Particle, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, Particle, ScreenShake, ColorFlash, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
 
 // Constants for rendering
 const CELL_SIZE = 40;
 const GRID_MARGIN_LEFT = 120;
 const GRID_MARGIN_TOP = 100;
+
+// Create screen shake effect
+export function createScreenShake(intensity: number): ScreenShake {
+  const baseDuration = 300; // 300ms base shake
+  const duration = baseDuration * intensity;
+
+  return {
+    offsetX: 0,
+    offsetY: 0,
+    intensity: intensity,
+    duration: duration
+  };
+}
+
+// Update screen shake (dampen over time, apply random offset)
+export function updateScreenShake(state: GameState, deltaTime: number): GameState {
+  if (!state.screenShake) {
+    return state;
+  }
+
+  const shake = state.screenShake;
+  const newDuration = shake.duration - deltaTime;
+
+  // Shake finished
+  if (newDuration <= 0) {
+    return {
+      ...state,
+      screenShake: null
+    };
+  }
+
+  // Calculate new intensity (ease out)
+  const newIntensity = newDuration / 300; // Normalize to original duration
+
+  // Apply random offset based on intensity
+  const maxOffset = 8 * newIntensity; // Max 8 pixels at full intensity
+  const newOffsetX = (Math.random() - 0.5) * 2 * maxOffset;
+  const newOffsetY = (Math.random() - 0.5) * 2 * maxOffset;
+
+  return {
+    ...state,
+    screenShake: {
+      ...shake,
+      offsetX: newOffsetX,
+      offsetY: newOffsetY,
+      intensity: newIntensity,
+      duration: newDuration
+    }
+  };
+}
+
+// Create color flash effect
+export function createColorFlash(color: string): ColorFlash {
+  return {
+    color: color,
+    opacity: 0.4, // Start at 40% opacity
+    duration: 200 // 200ms flash
+  };
+}
+
+// Update color flash (fade out)
+export function updateColorFlash(state: GameState, deltaTime: number): GameState {
+  if (!state.colorFlash) {
+    return state;
+  }
+
+  const flash = state.colorFlash;
+  const newDuration = flash.duration - deltaTime;
+
+  // Flash finished
+  if (newDuration <= 0) {
+    return {
+      ...state,
+      colorFlash: null
+    };
+  }
+
+  // Fade out linearly
+  const newOpacity = (newDuration / 200) * 0.4; // From 0.4 to 0
+
+  return {
+    ...state,
+    colorFlash: {
+      ...flash,
+      opacity: newOpacity,
+      duration: newDuration
+    }
+  };
+}
 
 // Create particle burst at a specific position
 export function createParticleBurst(x: number, y: number, color: string, count: number): Particle[] {
@@ -285,6 +374,11 @@ export function placeBlocks(state: GameState): GameState {
     newParticles = createParticleBurst(pixelX, pixelY, color, particleCount);
   }
 
+  // Create screen shake on block placement
+  // Intensity scales with number of blocks placed and combo
+  const shakeIntensity = Math.min(0.3 + (aligned.length / 10) + (state.comboStreak * 0.1), 1.0);
+  const newScreenShake = createScreenShake(shakeIntensity);
+
   // --- NEW SCORING SYSTEM ---
   const config = DIFFICULTIES[state.difficulty];
 
@@ -301,6 +395,18 @@ export function placeBlocks(state: GameState): GameState {
   const newComboStreak = isPerfect ? state.comboStreak + 1 : 0;
   const comboMultiplier = Math.min(1 + (newComboStreak * 0.1), 1.5); // 1.0 to 1.5x
   const comboBonus = Math.floor(basePoints * (comboMultiplier - 1));
+
+  // Create color flash at combo milestones
+  let newColorFlash: ColorFlash | null = null;
+  if (newComboStreak === 3) {
+    newColorFlash = createColorFlash('#00ffff'); // Cyan flash at 3x combo
+  } else if (newComboStreak === 5) {
+    newColorFlash = createColorFlash('#ffd700'); // Gold flash at 5x combo
+  } else if (newComboStreak === 10) {
+    newColorFlash = createColorFlash('#ff00ff'); // Magenta flash at 10x combo
+  } else if (newComboStreak >= 15) {
+    newColorFlash = createColorFlash('#ffffff'); // White flash at 15+ combo
+  }
 
   // Total score for this placement
   const placementScore = Math.floor(basePoints + speedBonus + comboBonus);
@@ -340,6 +446,8 @@ export function placeBlocks(state: GameState): GameState {
     fallingBlocks: [...state.fallingBlocks, ...newFallingBlocks], // Add new falling blocks
     squashEffects: [...state.squashEffects, ...newSquashEffects], // Add new squash effects
     particles: [...state.particles, ...newParticles], // Add new particles
+    screenShake: newScreenShake, // Add screen shake effect
+    colorFlash: newColorFlash || state.colorFlash, // Add color flash if milestone reached
     level: currentRow + 1,
     position: newPosition,
     score: newScore,
@@ -365,6 +473,8 @@ export function gameLoop(state: GameState): GameState {
   updatedState = updateFallingBlocks(updatedState, deltaTime);
   updatedState = updateSquashEffects(updatedState, deltaTime);
   updatedState = updateParticles(updatedState, deltaTime);
+  updatedState = updateScreenShake(updatedState, deltaTime);
+  updatedState = updateColorFlash(updatedState, deltaTime);
 
   // Only update block position if game is active
   if (!state.gameOver && !state.paused) {
