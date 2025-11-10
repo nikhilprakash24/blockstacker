@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { GameState, initializeGame, Difficulty, SpawnMode } from './gameState';
 import { gameLoop, handleButtonPress } from './gameLoop';
 import { render } from './rendering';
+import { soundManager } from './soundManager';
 import './App.css';
 
 function App() {
@@ -16,6 +17,80 @@ function App() {
   useEffect(() => {
     gameStateRef.current = gameState;
   }, [gameState]);
+
+  // Haptic feedback helper (defined early so it can be used in effects)
+  const vibrate = useCallback((pattern: number | number[]) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(pattern);
+    }
+  }, []);
+
+  // Resume audio context on first interaction (click, touch, or keyboard)
+  useEffect(() => {
+    const resumeAudio = () => {
+      soundManager.resumeAudioContext();
+      document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('touchstart', resumeAudio);
+      document.removeEventListener('keydown', resumeAudio);
+    };
+
+    document.addEventListener('click', resumeAudio);
+    document.addEventListener('touchstart', resumeAudio);
+    document.addEventListener('keydown', resumeAudio);
+
+    return () => {
+      document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('touchstart', resumeAudio);
+      document.removeEventListener('keydown', resumeAudio);
+    };
+  }, []);
+
+  // Sound effects and haptic feedback for game state changes
+  const prevGameStateRef = useRef<GameState>(gameState);
+
+  useEffect(() => {
+    const prev = prevGameStateRef.current;
+    const current = gameState;
+
+    // Game over sound + haptic
+    if (!prev.gameOver && current.gameOver && !current.won) {
+      soundManager.playGameOver();
+      vibrate([100, 50, 100]); // Buzz pattern
+    }
+
+    // Victory sound + haptic
+    if (!prev.won && current.won) {
+      soundManager.playVictory();
+      vibrate([50, 50, 50, 50, 200]); // Celebration pattern
+    }
+
+    // Combo milestone sounds + haptics
+    if (current.comboStreak > prev.comboStreak) {
+      if (current.comboStreak === 3 || current.comboStreak === 5 ||
+          current.comboStreak === 10 || current.comboStreak >= 15) {
+        soundManager.playComboMilestone(current.comboStreak);
+        vibrate(30); // Medium buzz
+      }
+    }
+
+    // Perfect placement sound + heavy haptic
+    if (current.perfectPlacements > prev.perfectPlacements) {
+      soundManager.playPerfectPlacement();
+      vibrate(50); // Heavy impact
+    }
+
+    // Level up haptic
+    if (current.level > prev.level && !current.gameOver) {
+      vibrate(40); // Medium-heavy for level up
+    }
+
+    // Block fall sound (when trimmed blocks are created)
+    if (current.fallingBlocks.length > prev.fallingBlocks.length) {
+      soundManager.playBlockFall();
+    }
+
+    prevGameStateRef.current = current;
+  }, [gameState, vibrate]);
 
   // Game loop
   useEffect(() => {
@@ -46,18 +121,34 @@ function App() {
     render(gameState, ctx);
   }, [gameState]);
 
-  // Input handling
+  // Input handling (works for both mouse and touch)
   const handleClick = useCallback(() => {
     if (!gameStarted) return;
-    setGameState(prevState => handleButtonPress(prevState));
-  }, [gameStarted]);
+
+    // Light haptic on every tap
+    vibrate(10);
+
+    const newState = handleButtonPress(gameState);
+    setGameState(newState);
+
+    // Play block placement sound (pitch increases with combo)
+    soundManager.playBlockPlace(newState.comboStreak);
+  }, [gameStarted, gameState, vibrate]);
+
+  // Touch handler for canvas (prevents default touch behaviors)
+  const handleCanvasTouch = useCallback((e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent zoom, scroll, etc.
+    handleClick();
+  }, [handleClick]);
 
   const handleStartGame = useCallback(() => {
+    soundManager.playButtonClick();
     setGameStarted(true);
     setGameState(initializeGame('carnivale-30'));
   }, []);
 
   const handleRestart = useCallback((difficulty?: Difficulty, spawnMode?: SpawnMode) => {
+    soundManager.playButtonClick();
     setGameState(initializeGame(
       difficulty || gameState.difficulty,
       7,
@@ -67,6 +158,7 @@ function App() {
   }, [gameState.difficulty, gameState.spawnMode]);
 
   const toggleSpawnMode = useCallback(() => {
+    soundManager.playSettingsChange();
     const newSpawnMode: SpawnMode = gameState.spawnMode === 'reset-left' ? 'resume' : 'reset-left';
     setGameState({ ...gameState, spawnMode: newSpawnMode });
   }, [gameState]);
@@ -106,7 +198,7 @@ function App() {
           <div className="start-instructions">
             <h3>How to Play</h3>
             <ul>
-              <li>Press <strong>SPACE</strong> or click to place blocks</li>
+              <li>Tap screen or press <strong>SPACE</strong> to place blocks</li>
               <li>Align blocks perfectly to keep them all</li>
               <li>Misaligned blocks will be trimmed off</li>
               <li>Reach row 11 for Minor Prize, row 15 for Major Prize</li>
@@ -127,7 +219,11 @@ function App() {
                 width={440}
                 height={740}
                 onClick={handleClick}
-                style={{ cursor: gameState.gameOver ? 'default' : 'pointer' }}
+                onTouchStart={handleCanvasTouch}
+                style={{
+                  cursor: gameState.gameOver ? 'default' : 'pointer',
+                  touchAction: 'none' // Prevent default touch behaviors
+                }}
               />
 
               <div className="game-controls">
@@ -136,12 +232,12 @@ function App() {
                   disabled={gameState.gameOver}
                   className="place-button"
                 >
-                  PLACE BLOCKS (SPACE)
+                  PLACE BLOCKS
                 </button>
 
                 <div className="control-row">
                   <button onClick={() => handleRestart()} className="control-btn">
-                    Restart (R)
+                    🔄 Restart
                   </button>
                   <button onClick={() => setShowSettings(true)} className="control-btn">
                     ⚙️ Settings
@@ -168,21 +264,29 @@ function App() {
               {gameState.won && (
                 <div className="victory-screen">
                   <h1>MAJOR PRIZE WON!</h1>
-                  <p className="final-score">Score: {gameState.score}</p>
+                  <p className="final-score">Score: {Math.floor(gameState.displayScore)}</p>
                   <p>Perfect Placements: {gameState.perfectPlacements}</p>
                   <button onClick={() => handleRestart()}>Play Again</button>
                 </div>
               )}
 
               {gameState.gameOver && !gameState.won && (
-                <div className="game-over-screen">
-                  <h2>Game Over</h2>
-                  <p className="final-score">Final Score: {gameState.score}</p>
-                  <p>Level Reached: {gameState.level - 1}/{gameState.majorPrizeRow}</p>
-                  {gameState.score === gameState.highScore && gameState.score > 0 && (
-                    <p className="new-high-score">NEW HIGH SCORE!</p>
-                  )}
-                  <button onClick={() => handleRestart()}>Try Again (R)</button>
+                <div
+                  className="game-over-overlay"
+                  onClick={() => handleRestart()}
+                  onTouchStart={(e) => { e.preventDefault(); handleRestart(); }}
+                >
+                  <div className="game-over-instant">
+                    <div className="score-display">
+                      <div className="score-number">{Math.floor(gameState.displayScore)}</div>
+                      {gameState.score === gameState.highScore && gameState.score > 0 && (
+                        <div className="new-best-badge">🏆 NEW BEST</div>
+                      )}
+                    </div>
+                    <div className="level-display">LEVEL {gameState.level - 1}</div>
+                    <div className="best-display">BEST: {gameState.highScore}</div>
+                    <div className="tap-restart">TAP TO RESTART</div>
+                  </div>
                 </div>
               )}
             </div>
@@ -191,7 +295,7 @@ function App() {
               <h3>Score</h3>
               <div className="score-breakdown">
                 <div className="score-item">
-                  <span>Total:</span> <strong>{gameState.score}</strong>
+                  <span>Total:</span> <strong>{Math.floor(gameState.displayScore)}</strong>
                 </div>
                 <div className="score-item">
                   <span>High Score:</span> <strong>{gameState.highScore}</strong>
@@ -259,7 +363,44 @@ function App() {
               </p>
             </div>
 
-            <button onClick={() => setShowSettings(false)} className="close-settings">
+            <div className="setting-group">
+              <h3>🔊 Sound Effects Volume</h3>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={soundManager.getSFXVolume()}
+                onChange={(e) => {
+                  soundManager.setSFXVolume(parseFloat(e.target.value));
+                  soundManager.playButtonClick(); // Preview sound
+                }}
+                className="volume-slider"
+              />
+              <p className="setting-hint">
+                {Math.round(soundManager.getSFXVolume() * 100)}%
+              </p>
+            </div>
+
+            <div className="setting-group">
+              <h3>🎵 Music Volume</h3>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={soundManager.getMusicVolume()}
+                onChange={(e) => {
+                  soundManager.setMusicVolume(parseFloat(e.target.value));
+                }}
+                className="volume-slider"
+              />
+              <p className="setting-hint">
+                {Math.round(soundManager.getMusicVolume() * 100)}% (Music system coming soon)
+              </p>
+            </div>
+
+            <button onClick={() => { soundManager.playUISelect(); setShowSettings(false); }} className="close-settings">
               Close
             </button>
           </div>
