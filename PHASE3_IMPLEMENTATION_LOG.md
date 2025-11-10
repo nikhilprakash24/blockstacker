@@ -188,6 +188,38 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
   - Prize system disabled via MODE_CONFIGS.hasPrizes flag
   - No height limit check needed (naturally continues past row 15)
 
+### [00:13] Task 3.2: Time Attack UI - Timer Display
+- **Action**: Added prominent countdown timer display with color-coded urgency
+- **Files Modified**:
+  - src/rendering.ts (added timer rendering function)
+- **Changes to rendering.ts**:
+  - Modified `render()` function:
+    - Call drawTimeAttackTimer() for gameMode='timeAttack'
+    - Render timer after UI elements, before screen effects
+  - Created `drawTimeAttackTimer()` function:
+    - Position: Top center of canvas (centerX, y=50)
+    - Format: Displays time with 1 decimal (e.g., "45.3")
+    - Two-line layout: "TIME" label + timer value
+- **Color-Coding System**:
+  - **Green** (>30s): Plenty of time, calm
+  - **Yellow** (15-30s): Moderate urgency
+  - **Red** (10-15s): High urgency
+  - **Flashing Red** (<10s): Critical urgency with pulse effect
+- **Visual Effects**:
+  - Large 64px bold font for timer value
+  - 24px label ("TIME") above timer
+  - Glowing shadow effect matching timer color
+  - Pulse animation <10s: 2 Hz sine wave (0.6-1.0 opacity)
+  - Always visible, non-intrusive positioning
+- **Build**: ✅ `npm run build` succeeded
+  - JS: 172.51 kB (was 171.87 kB) - +0.64 kB for timer UI
+- **Status**: ✅ Completed
+- **Implementation Notes**:
+  - Follows Decision D006: Large, prominent timer display
+  - Pulse frequency: 2 Hz (2 pulses per second) at <10s
+  - Timer positioned to avoid blocking gameplay grid
+  - Mode indicator badge (from Task 2.1) already shows "⏱️ Time Attack"
+
 ---
 
-**Last Updated**: 2025-11-10 00:12
+**Last Updated**: 2025-11-10 00:14
