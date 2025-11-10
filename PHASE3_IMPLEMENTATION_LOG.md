@@ -81,6 +81,46 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
 - **Build**: ✅ `npm run build` succeeded - no TypeScript errors
 - **Status**: ✅ Completed
 
+### [00:07] Task 1.2: Create Mode Selection UI
+- **Action**: Implemented comprehensive mode selection screen with card-based UI
+- **Files Modified**:
+  - src/App.tsx (replaced start screen with mode selection)
+  - src/App.css (added 140+ lines of mode selection styles)
+- **Changes to App.tsx**:
+  - Added imports: `GameMode`, `MODE_CONFIGS`
+  - Added state: `showModeSelection` boolean
+  - Modified `handleStartGame()` to accept `GameMode` parameter
+  - Modified `handleRestart()` to preserve current game mode
+  - Replaced start screen with two-stage UI:
+    - Stage 1: "Select Game Mode" button
+    - Stage 2: Grid of 5 mode cards with icons, descriptions, and feature badges
+  - Each mode card dynamically generated from `MODE_CONFIGS`
+- **Changes to App.css**:
+  - Added `.mode-selection` container with fade-in animation
+  - Added `.back-button` for navigation
+  - Added `.mode-selection-title` with glowing text effect
+  - Added `.mode-grid` with responsive auto-fit layout
+  - Added `.mode-card` with:
+    - Hover effects (lift + scale + glow)
+    - Border color from mode config
+    - Gradient overlay on hover
+    - Minimum height of 280px
+    - Flexbox layout for consistent spacing
+  - Added `.mode-icon` with floating animation (3s infinite)
+  - Added `.mode-features` and `.mode-badge` for feature indicators
+  - Added mobile responsive styles (single column on <600px)
+- **Visual Features**:
+  - Each mode has unique color theme (border + icon color)
+  - Smooth hover animations with cubic-bezier easing
+  - Feature badges show mode characteristics (⏱️ Timed, 🎁 Prizes, ∞ Endless)
+  - Icons float gently for visual interest
+  - Mobile-friendly with proper touch targets (44px minimum)
+- **Build**: ✅ `npm run build` succeeded
+  - CSS: 14.38 kB (was 12.14 kB) - +2.24 kB for mode styles
+  - JS: 171.36 kB (was 169.05 kB) - +2.31 kB for mode logic
+- **Status**: ✅ Completed
+- **Implementation Notes**: Follows Decision D002 (card grid UI pattern)
+
 ---
 
-**Last Updated**: 2025-11-10 00:06
+**Last Updated**: 2025-11-10 00:08
