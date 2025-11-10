@@ -84,6 +84,7 @@ export interface GameState {
   pressTime: number;        // When button was pressed
   continueTime: number;     // When continue was pressed from prize screen
   blockSpawnTime: number;   // When current moving blocks were spawned (for spawn animation)
+  gameStartTime: number;    // When game started (for playtime tracking)
 
   // Scoring
   score: number;
@@ -323,6 +324,7 @@ export function initializeGame(
     pressTime: 0,
     continueTime: 0,
     blockSpawnTime: Date.now(), // Blocks spawn immediately at game start
+    gameStartTime: Date.now(), // Track start time for statistics
     score: 0,
     displayScore: 0, // Starts at 0, will animate to match score
     highScore: loadHighScore(),

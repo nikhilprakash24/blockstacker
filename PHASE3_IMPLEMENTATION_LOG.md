@@ -287,6 +287,63 @@ This document tracks EVERY action taken during autonomous Phase 3 development.
   - Best height persists across game sessions (from maxHeightReached)
   - Consistent UI pattern with Time Attack timer
 
+### [00:19] Task 5.1: Statistics Storage System
+- **Action**: Implemented comprehensive statistics tracking with localStorage persistence
+- **Files Created**:
+  - src/statistics.ts (complete statistics system)
+- **Files Modified**:
+  - src/gameState.ts (added gameStartTime field)
+  - src/gameLoop.ts (integrated statistics recording)
+- **Changes to statistics.ts**:
+  - Created `ModeStatistics` interface:
+    - Games played/won counts
+    - Best/total/average scores
+    - Perfect placements and total blocks
+    - **Minor/major prize counts** (addresses user request!)
+    - Best time (Time Attack)
+    - Best height (Endless)
+    - Total playtime per mode
+  - Created `GlobalStatistics` interface:
+    - Total games/playtime across all modes
+    - Favorite mode tracking
+    - First/last played timestamps
+  - Implemented `loadStatistics()`: localStorage retrieval with fallback
+  - Implemented `saveStatistics()`: localStorage persistence
+  - Implemented `recordGame()`: Record game results with all stats
+  - Helper functions: getModeStatistics(), getGlobalStatistics(), resetStatistics()
+- **Changes to gameState.ts**:
+  - Added `gameStartTime: number` field to GameState
+  - Initialize in initializeGame() with Date.now()
+- **Changes to gameLoop.ts**:
+  - Import `recordGame` from statistics
+  - Record stats on game over (no blocks aligned):
+    - Calculate playtime: (Date.now() - gameStartTime) / 1000
+    - Track minor prize reached, blocks placed, perfect placements
+  - Record stats on Time Attack timer expiry:
+    - Same tracking as above
+  - Record stats on Classic mode win (major prize reached):
+    - Mark as won=true
+    - Record both minor and major prize flags
+- **Statistics Tracked**:
+  - **Per Mode**: games, wins, scores, playtime, perfect placements, blocks
+  - **Classic Mode**: **minorPrizesWon**, **majorPrizesWon** (user request!)
+  - **Time Attack**: bestTime (future feature)
+  - **Endless**: bestHeight
+  - **Global**: total games, favorite mode, timestamps
+- **Storage Format**:
+  - Single localStorage key: `blockstacker_statistics`
+  - JSON object with per-mode and global stats
+  - Backwards compatible (creates missing fields)
+- **Build**: ✅ `npm run build` succeeded
+  - JS: 175.28 kB (was 173.24 kB) - +2.04 kB for statistics system
+- **Status**: ✅ Completed
+- **User Request Fulfilled**: Now tracking minor/major prize counts as requested!
+- **Implementation Notes**:
+  - Follows Decision D004: Single JSON localStorage object
+  - Stats recorded at 3 game end points: failure, timer expiry, win
+  - Ready for stats display UI (Task 5.2)
+  - Foundation for meme displays on prize wins (future enhancement)
+
 ---
 
-**Last Updated**: 2025-11-10 00:18
+**Last Updated**: 2025-11-10 00:20

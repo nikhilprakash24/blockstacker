@@ -1,4 +1,5 @@
 import { GameState, Block, FallingBlock, SquashEffect, Particle, ScreenShake, ColorFlash, LevelUpEffect, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES, MODE_CONFIGS } from './gameState';
+import { recordGame } from './statistics';
 
 // Constants for rendering
 const CELL_SIZE = 40;
@@ -378,6 +379,21 @@ export function placeBlocks(state: GameState): GameState {
   // Game over if no blocks aligned
   if (aligned.length === 0) {
     saveHighScore(state.score);
+
+    // Record game statistics
+    const playtimeSeconds = (Date.now() - state.gameStartTime) / 1000;
+    recordGame(
+      state.gameMode,
+      state.score,
+      false, // Did not win
+      state.perfectPlacements,
+      state.blocks.length, // Total blocks placed
+      playtimeSeconds,
+      state.minorPrizeReached, // For Classic mode
+      false, // Did not reach major prize
+      state.maxHeightReached // For Endless mode
+    );
+
     return {
       ...state,
       gameOver: true,
@@ -511,6 +527,22 @@ export function placeBlocks(state: GameState): GameState {
     }
   }
 
+  // Record statistics if game is won (reached major prize in Classic mode)
+  if (won) {
+    const playtimeSeconds = (Date.now() - state.gameStartTime) / 1000;
+    recordGame(
+      state.gameMode,
+      newScore,
+      true, // Won!
+      isPerfect ? state.perfectPlacements + 1 : state.perfectPlacements,
+      newBlocks.length,
+      playtimeSeconds,
+      minorPrizeReached || state.minorPrizeReached,
+      true, // Reached major prize
+      newMaxHeightReached
+    );
+  }
+
   return {
     ...state,
     blocks: newBlocks,
@@ -581,6 +613,21 @@ export function updateTimeAttackTimer(state: GameState, deltaTime: number): Game
   if (newTimeRemaining === 0 && state.timeRemaining > 0) {
     // Time's up! Game over
     saveHighScore(state.score);
+
+    // Record game statistics
+    const playtimeSeconds = (Date.now() - state.gameStartTime) / 1000;
+    recordGame(
+      state.gameMode,
+      state.score,
+      false, // Time Attack doesn't have "win" - just ended
+      state.perfectPlacements,
+      state.blocks.length,
+      playtimeSeconds,
+      false, // No prizes in Time Attack
+      false,
+      state.maxHeightReached
+    );
+
     return {
       ...state,
       timeRemaining: 0,
