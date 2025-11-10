@@ -18,19 +18,22 @@ function App() {
     gameStateRef.current = gameState;
   }, [gameState]);
 
-  // Resume audio context on first interaction
+  // Resume audio context on first interaction (click, touch, or keyboard)
   useEffect(() => {
     const resumeAudio = () => {
       soundManager.resumeAudioContext();
       document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('touchstart', resumeAudio);
       document.removeEventListener('keydown', resumeAudio);
     };
 
     document.addEventListener('click', resumeAudio);
+    document.addEventListener('touchstart', resumeAudio);
     document.addEventListener('keydown', resumeAudio);
 
     return () => {
       document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('touchstart', resumeAudio);
       document.removeEventListener('keydown', resumeAudio);
     };
   }, []);
@@ -102,7 +105,7 @@ function App() {
     render(gameState, ctx);
   }, [gameState]);
 
-  // Input handling
+  // Input handling (works for both mouse and touch)
   const handleClick = useCallback(() => {
     if (!gameStarted) return;
     const newState = handleButtonPress(gameState);
@@ -111,6 +114,12 @@ function App() {
     // Play block placement sound (pitch increases with combo)
     soundManager.playBlockPlace(newState.comboStreak);
   }, [gameStarted, gameState]);
+
+  // Touch handler for canvas (prevents default touch behaviors)
+  const handleCanvasTouch = useCallback((e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent zoom, scroll, etc.
+    handleClick();
+  }, [handleClick]);
 
   const handleStartGame = useCallback(() => {
     soundManager.playButtonClick();
@@ -169,7 +178,7 @@ function App() {
           <div className="start-instructions">
             <h3>How to Play</h3>
             <ul>
-              <li>Press <strong>SPACE</strong> or click to place blocks</li>
+              <li>Tap screen or press <strong>SPACE</strong> to place blocks</li>
               <li>Align blocks perfectly to keep them all</li>
               <li>Misaligned blocks will be trimmed off</li>
               <li>Reach row 11 for Minor Prize, row 15 for Major Prize</li>
@@ -190,7 +199,11 @@ function App() {
                 width={440}
                 height={740}
                 onClick={handleClick}
-                style={{ cursor: gameState.gameOver ? 'default' : 'pointer' }}
+                onTouchStart={handleCanvasTouch}
+                style={{
+                  cursor: gameState.gameOver ? 'default' : 'pointer',
+                  touchAction: 'none' // Prevent default touch behaviors
+                }}
               />
 
               <div className="game-controls">
@@ -199,12 +212,12 @@ function App() {
                   disabled={gameState.gameOver}
                   className="place-button"
                 >
-                  PLACE BLOCKS (SPACE)
+                  PLACE BLOCKS
                 </button>
 
                 <div className="control-row">
                   <button onClick={() => handleRestart()} className="control-btn">
-                    Restart (R)
+                    🔄 Restart
                   </button>
                   <button onClick={() => setShowSettings(true)} className="control-btn">
                     ⚙️ Settings
@@ -245,7 +258,7 @@ function App() {
                   {gameState.score === gameState.highScore && gameState.score > 0 && (
                     <p className="new-high-score">NEW HIGH SCORE!</p>
                   )}
-                  <button onClick={() => handleRestart()}>Try Again (R)</button>
+                  <button onClick={() => handleRestart()}>Try Again</button>
                 </div>
               )}
             </div>
