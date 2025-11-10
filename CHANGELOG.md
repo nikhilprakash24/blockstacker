@@ -139,6 +139,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Simplified button text (removed keyboard hints on small screens)
     - Emoji icons for better mobile visual clarity
 
+- **Phase 2.5: Flappy Bird-Inspired Addictive Game Loop** (2025-11-10)
+  - **Zero-Friction Instant Restart:**
+    - Tap anywhere on game over screen to restart immediately
+    - Death → Restart time reduced from 2-3s to <0.5s
+    - Full-screen overlay (not modal) with semi-transparent background
+    - Large score display (6rem font) for instant feedback
+    - Pulsing "TAP TO RESTART" text with green glow
+    - Game field visible behind overlay
+  - **Multi-Sensory Haptic Feedback (Web Vibration API):**
+    - Light tap (10ms) on every block placement
+    - Heavy impact (50ms) on perfect placement
+    - Buzz pattern (100-50-100ms) on game over
+    - Celebration pattern (50-50-50-50-200ms) on victory
+    - Medium feedback (30-40ms) for combos and level ups
+    - All haptics with browser compatibility check
+  - **Enhanced Audio Design (Bass Impact):**
+    - Layered placement sound: 80Hz bass + 440Hz mid + 880Hz high + reverb tail
+    - 4-layer sound architecture for satisfying "thump" feel
+    - Perfect placement enriched with octave harmonies + sub-bass (on final note)
+    - Pitch scales with combo for auditory progression feedback
+    - All changes applied to soundManager.ts playBlockPlace() and playPerfectPlacement()
+  - **Real-Time Alignment Indicator (Pre-Placement Feedback):**
+    - Color-coded borders on moving blocks show placement quality BEFORE committing
+    - Green (#00ff00): Perfect alignment - all blocks fully supported
+    - Yellow-green (#7fff00): Good alignment - excellent placement
+    - Orange (#ffaa00): Warning - acceptable but will trim slightly
+    - Red (#ff0000): Danger - blocks will fall
+    - Thick glowing border (4px) with inner white contrast border
+    - Mirrors actual game physics for 100% accurate feedback
+    - Calculates overhang using same logic as placement system
+  - **Score Count-Up Animation:**
+    - Added `displayScore` field to GameState for animated display
+    - Score counts up smoothly instead of jumping instantly
+    - Speed scales with difference (15% per frame, minimum 1)
+    - Small gains count up instantly, large gains animate visibly
+    - Applied to all score displays (canvas, UI panel, game over, victory)
+    - updateDisplayScore() function in gameLoop updates every frame
+  - **Flow State Indicators (Combo Visualization):**
+    - Dynamic combo display in top-right corner with escalating intensity
+    - 3x+: Green "NICE" label (1.0x scale)
+    - 5x+: Gold "GREAT" label (1.2x scale)
+    - 10x+: Orange "AMAZING" label (1.3x scale, gentle pulse)
+    - 15x+: Magenta "🔥 ON FIRE! 🔥" (1.5x scale, strong pulse)
+    - Pulsing animation driven by Date.now() sine wave
+    - Large combo number (up to 72px font at 15x+ combo)
+    - Glow effects scale with intensity (10-30px shadow blur)
+  - **Documentation:**
+    - Created FLAPPY_BIRD_ANALYSIS.md (600+ lines)
+    - 10 psychological mechanics analyzed and prioritized
+    - Implementation guidance for each feature
+    - Flappy Bird psychology deep dive
+    - "Just one more try" loop optimization strategies
+
 ### Changed
 - **Game Loop Enhancement** (2025-11-10)
   - `gameLoop()` now updates falling blocks even when game is over
@@ -302,6 +355,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Phase 2.5: Touch target compliance (44px minimum)
 - ✅ Phase 2.6: UI text mobile-friendly updates
 
+**Phase 2.5: Addictive Game Loop (Flappy Bird Psychology)** ✅ COMPLETE
+- ✅ Phase 2.5.1: Zero-friction instant restart (tap anywhere)
+- ✅ Phase 2.5.2: Multi-sensory haptic feedback system
+- ✅ Phase 2.5.3: Enhanced audio design (bass impact)
+- ✅ Phase 2.5.4: Real-time alignment indicator (color-coded borders)
+- ✅ Phase 2.5.5: Score count-up animation
+- ✅ Phase 2.5.6: Flow state indicators (dynamic combo display)
+- ✅ FLAPPY_BIRD_ANALYSIS.md documentation
+
 **Documentation** ✅ COMPLETE
 - ✅ iOS App Conversion Guide (1-2 day timeline with Capacitor)
 - ✅ Scoring Algorithm Documentation (comprehensive formula breakdown)
@@ -309,14 +371,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Progress Summary (autonomous development tracking)
 
 ### Next Steps
-- Phase 1.3 (Optional): Combo counter pulse animation (CSS class trigger from React)
-- Phase 1.3 (Optional): Score count-up animation (number increment effect)
-- Phase 1.3 (Optional): Background visual enhancements (animated gradients)
 - **Phase 3.0: Game Modes & Content Expansion** (Next branch)
-  - Time Attack mode
-  - Endless mode
-  - Challenge scenarios
-  - Achievements system
+  - Classic Mode (current gameplay)
+  - Time Attack mode (60 seconds)
+  - Endless mode (infinite height)
+  - Challenge scenarios (special constraints)
+  - Zen mode (no timer, relaxed)
+  - Achievements system (25 achievements)
+  - Statistics tracking
   - Daily challenges
 
 ---
