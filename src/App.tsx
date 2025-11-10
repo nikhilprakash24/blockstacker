@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { GameState, initializeGame, Difficulty, SpawnMode } from './gameState';
 import { gameLoop, handleButtonPress } from './gameLoop';
 import { render } from './rendering';
+import { soundManager } from './soundManager';
 import './App.css';
 
 function App() {
@@ -15,6 +16,61 @@ function App() {
   // Keep ref in sync with state
   useEffect(() => {
     gameStateRef.current = gameState;
+  }, [gameState]);
+
+  // Resume audio context on first interaction
+  useEffect(() => {
+    const resumeAudio = () => {
+      soundManager.resumeAudioContext();
+      document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('keydown', resumeAudio);
+    };
+
+    document.addEventListener('click', resumeAudio);
+    document.addEventListener('keydown', resumeAudio);
+
+    return () => {
+      document.removeEventListener('click', resumeAudio);
+      document.removeEventListener('keydown', resumeAudio);
+    };
+  }, []);
+
+  // Sound effects for game state changes
+  const prevGameStateRef = useRef<GameState>(gameState);
+
+  useEffect(() => {
+    const prev = prevGameStateRef.current;
+    const current = gameState;
+
+    // Game over sound
+    if (!prev.gameOver && current.gameOver && !current.won) {
+      soundManager.playGameOver();
+    }
+
+    // Victory sound
+    if (!prev.won && current.won) {
+      soundManager.playVictory();
+    }
+
+    // Combo milestone sounds
+    if (current.comboStreak > prev.comboStreak) {
+      if (current.comboStreak === 3 || current.comboStreak === 5 ||
+          current.comboStreak === 10 || current.comboStreak >= 15) {
+        soundManager.playComboMilestone(current.comboStreak);
+      }
+    }
+
+    // Perfect placement sound
+    if (current.perfectPlacements > prev.perfectPlacements) {
+      soundManager.playPerfectPlacement();
+    }
+
+    // Block fall sound (when trimmed blocks are created)
+    if (current.fallingBlocks.length > prev.fallingBlocks.length) {
+      soundManager.playBlockFall();
+    }
+
+    prevGameStateRef.current = current;
   }, [gameState]);
 
   // Game loop
@@ -49,15 +105,21 @@ function App() {
   // Input handling
   const handleClick = useCallback(() => {
     if (!gameStarted) return;
-    setGameState(prevState => handleButtonPress(prevState));
-  }, [gameStarted]);
+    const newState = handleButtonPress(gameState);
+    setGameState(newState);
+
+    // Play block placement sound (pitch increases with combo)
+    soundManager.playBlockPlace(newState.comboStreak);
+  }, [gameStarted, gameState]);
 
   const handleStartGame = useCallback(() => {
+    soundManager.playButtonClick();
     setGameStarted(true);
     setGameState(initializeGame('carnivale-30'));
   }, []);
 
   const handleRestart = useCallback((difficulty?: Difficulty, spawnMode?: SpawnMode) => {
+    soundManager.playButtonClick();
     setGameState(initializeGame(
       difficulty || gameState.difficulty,
       7,
@@ -67,6 +129,7 @@ function App() {
   }, [gameState.difficulty, gameState.spawnMode]);
 
   const toggleSpawnMode = useCallback(() => {
+    soundManager.playSettingsChange();
     const newSpawnMode: SpawnMode = gameState.spawnMode === 'reset-left' ? 'resume' : 'reset-left';
     setGameState({ ...gameState, spawnMode: newSpawnMode });
   }, [gameState]);
@@ -259,7 +322,44 @@ function App() {
               </p>
             </div>
 
-            <button onClick={() => setShowSettings(false)} className="close-settings">
+            <div className="setting-group">
+              <h3>🔊 Sound Effects Volume</h3>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={soundManager.getSFXVolume()}
+                onChange={(e) => {
+                  soundManager.setSFXVolume(parseFloat(e.target.value));
+                  soundManager.playButtonClick(); // Preview sound
+                }}
+                className="volume-slider"
+              />
+              <p className="setting-hint">
+                {Math.round(soundManager.getSFXVolume() * 100)}%
+              </p>
+            </div>
+
+            <div className="setting-group">
+              <h3>🎵 Music Volume</h3>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={soundManager.getMusicVolume()}
+                onChange={(e) => {
+                  soundManager.setMusicVolume(parseFloat(e.target.value));
+                }}
+                className="volume-slider"
+              />
+              <p className="setting-hint">
+                {Math.round(soundManager.getMusicVolume() * 100)}% (Music system coming soon)
+              </p>
+            </div>
+
+            <button onClick={() => { soundManager.playUISelect(); setShowSettings(false); }} className="close-settings">
               Close
             </button>
           </div>

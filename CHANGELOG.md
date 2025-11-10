@@ -56,6 +56,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 40% starting opacity, fades to 0
   - Full-screen overlay rendered after all game elements
 
+- **Web Audio API Sound System** (2025-11-10)
+  - Created `soundManager.ts` with programmatic sound generation
+  - No external audio files required - all sounds generated via Web Audio API
+  - `SoundManager` class with master/SFX/music gain node architecture
+  - Volume control with localStorage persistence
+  - AudioContext resume handling for browser compatibility
+  - **Sound Effects Implemented:**
+    - `playBlockPlace(combo)` - Block placement with pitch scaling by combo (440Hz base + 50Hz per combo)
+    - `playPerfectPlacement()` - Ascending arpeggio (C5, E5, G5) for perfect alignments
+    - `playBlockFall()` - Descending pitch sweep (400Hz→100Hz) with sawtooth wave
+    - `playComboMilestone(level)` - Escalating sounds at 3x, 5x, 10x, 15x+ combos
+    - `playGameOver()` - Descending chromatic scale (sad trombone effect)
+    - `playVictory()` - Major chord arpeggio fanfare with harmony
+    - `playButtonClick()` - Simple 600Hz sine wave for UI feedback
+    - `playUISelect()` - 800Hz navigation sound
+    - `playSettingsChange()` - Dual-tone (500Hz→600Hz) setting confirmation
+  - **Integration with App.tsx:**
+    - Audio context resume on first user interaction
+    - Game state change detection via useRef for sound triggers
+    - Automatic sounds on game over, victory, combos, perfect placements, falling blocks
+    - Button click sounds on all interactive elements
+  - **Volume Controls:**
+    - SFX volume slider with live preview (0-100%)
+    - Music volume slider (placeholder for future background music)
+    - Styled volume sliders with cyan gradient thumbs and glow effects
+    - Settings modal integration with visual percentage display
+
 ### Changed
 - **Game Loop Enhancement** (2025-11-10)
   - `gameLoop()` now updates falling blocks even when game is over
@@ -97,17 +124,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shake intensity formula: `min(0.3 + blocks/10 + combo*0.1, 1.0)`
   - Color flash triggers at milestones: 3x (cyan), 5x (gold), 10x (magenta), 15x+ (white)
 
+- **Sound System Architecture** (2025-11-10)
+  - Created `/src/soundManager.ts` with `SoundManager` class
+  - Singleton pattern: Exported `soundManager` instance
+  - Web Audio API node graph: AudioContext → Master Gain → (SFX Gain + Music Gain) → Destination
+  - Helper methods: `playTone()` for oscillator generation, `playNoise()` for white noise effects
+  - Volume persistence: Uses localStorage for SFX/music volume preferences
+  - Browser compatibility: Handles webkit prefix, suspended AudioContext states
+  - CSS styling: Added `.volume-slider` with webkit/moz thumb styling in App.css
+  - Sound triggering: useRef-based previous state comparison in App.tsx for state change detection
+
 ### Fixed
 - **Test Suite** (2025-11-10)
   - Removed unused type imports from gameState.test.ts
   - All 88 tests passing after falling animation implementation
 
 ### Testing
-- **Build Status**: ✅ Passing (vite build successful)
+- **Build Status**: ✅ Passing (vite build successful - Phase 1.2)
 - **Test Status**: ✅ 87/88 tests passing (1 test requires update for visual effects behavior)
   - Note: One test expects no state changes when game is over, but visual effects (shake, particles, falling blocks) intentionally continue animating
   - This is correct behavior and will be reflected in updated tests
-- **Manual Testing**: Pending visual verification in browser
+- **Manual Testing**:
+  - Phase 1.1 (Visual Effects): Pending browser verification
+  - Phase 1.2 (Sound System): Pending browser verification
+  - Sound effects should trigger on: block placement, perfect placements, combos, falling blocks, game over, victory, UI interactions
+  - Volume sliders should persist settings in localStorage and update in real-time
 
 ---
 
@@ -170,11 +211,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 3. **Gravity feel**: 8 rows/s² balanced between realistic and game-feel
 4. **Always update**: Falling blocks animate even during game-over for polish
 
-### Next Steps (Per MASTER_PLAN.md)
-- Phase 1.1: Block placement squash animation
-- Phase 1.1: Particle burst on perfect placement
-- Phase 1.1: Screen shake system
-- Phase 1.1: Combo color flash
+### Phase 1 Status (Per MASTER_PLAN.md)
+- ✅ Phase 1.1: Block falling animation
+- ✅ Phase 1.1: Block placement squash animation
+- ✅ Phase 1.1: Particle burst on perfect placement
+- ✅ Phase 1.1: Screen shake system
+- ✅ Phase 1.1: Combo color flash
+- ✅ Phase 1.2: Sound system with Web Audio API
+- ✅ Phase 1.2: Volume controls (SFX/Music sliders)
+
+### Next Steps
+- Phase 1.2 (Optional): Background music system
+- Phase 1.3: Background visual enhancements
+- Phase 1.3: Level-up transition animations
+- Phase 2.0: Mobile optimization (touch controls, responsive design)
+- Phase 3.0: Game modes & content expansion
 
 ---
 
