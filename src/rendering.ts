@@ -148,6 +148,11 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   drawScore(ctx, state);
   drawComboIndicator(ctx, state);
 
+  // Draw Time Attack timer if applicable
+  if (state.gameMode === 'timeAttack' && state.timeRemaining !== null) {
+    drawTimeAttackTimer(ctx, state.timeRemaining);
+  }
+
   // Restore context if screen shake was applied
   if (state.screenShake) {
     ctx.restore();
@@ -198,6 +203,64 @@ function drawLevelUpEffect(ctx: CanvasRenderingContext2D, effect: LevelUpEffect)
   ctx.shadowColor = '#ffd700';
   ctx.shadowBlur = 30;
   ctx.fillText(effect.level.toString(), centerX, centerY + 40);
+
+  ctx.restore();
+}
+
+function drawTimeAttackTimer(ctx: CanvasRenderingContext2D, timeRemaining: number): void {
+  ctx.save();
+
+  // Position: Top center of canvas
+  const centerX = ctx.canvas.width / 2;
+  const timerY = 50;
+
+  // Format time: display as seconds with 1 decimal (e.g., "45.3")
+  const displayTime = Math.max(0, timeRemaining).toFixed(1);
+
+  // Color-code based on time remaining
+  let timerColor: string;
+  let shadowColor: string;
+  let pulseOpacity = 1.0;
+
+  if (timeRemaining > 30) {
+    // Green: plenty of time
+    timerColor = '#00ff00';
+    shadowColor = '#00ff00';
+  } else if (timeRemaining > 15) {
+    // Yellow: moderate urgency
+    timerColor = '#ffff00';
+    shadowColor = '#ffff00';
+  } else if (timeRemaining > 10) {
+    // Red: high urgency
+    timerColor = '#ff0000';
+    shadowColor = '#ff0000';
+  } else {
+    // Flashing red: critical urgency (<10s)
+    timerColor = '#ff0000';
+    shadowColor = '#ff0000';
+    // Pulse effect using sine wave (2 Hz = 2 pulses per second)
+    const time = Date.now() / 1000;
+    pulseOpacity = 0.6 + 0.4 * Math.abs(Math.sin(time * Math.PI * 2));
+  }
+
+  // Apply pulse opacity
+  ctx.globalAlpha = pulseOpacity;
+
+  // Draw "TIME" label
+  ctx.font = 'bold 24px Arial';
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 15;
+  ctx.shadowColor = shadowColor;
+  ctx.fillText('TIME', centerX, timerY - 25);
+
+  // Draw timer value (large and prominent)
+  ctx.font = 'bold 64px Arial';
+  ctx.fillStyle = timerColor;
+  ctx.shadowBlur = 30;
+  ctx.shadowColor = shadowColor;
+  ctx.fillText(displayTime, centerX, timerY + 20);
 
   ctx.restore();
 }

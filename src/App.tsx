@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { GameState, initializeGame, Difficulty, SpawnMode } from './gameState';
+import { GameState, initializeGame, Difficulty, SpawnMode, GameMode, MODE_CONFIGS } from './gameState';
 import { gameLoop, handleButtonPress } from './gameLoop';
 import { render } from './rendering';
 import { soundManager } from './soundManager';
@@ -10,6 +10,7 @@ function App() {
   const [gameState, setGameState] = useState<GameState>(() => initializeGame('carnivale-30'));
   const [gameStarted, setGameStarted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showModeSelection, setShowModeSelection] = useState(false);
   const animationRef = useRef<number>();
   const gameStateRef = useRef<GameState>(gameState);
 
@@ -141,10 +142,11 @@ function App() {
     handleClick();
   }, [handleClick]);
 
-  const handleStartGame = useCallback(() => {
+  const handleStartGame = useCallback((mode: GameMode = 'classic') => {
     soundManager.playButtonClick();
     setGameStarted(true);
-    setGameState(initializeGame('carnivale-30'));
+    setGameState(initializeGame('carnivale-30', 7, 'resume', mode));
+    setShowModeSelection(false);
   }, []);
 
   const handleRestart = useCallback((difficulty?: Difficulty, spawnMode?: SpawnMode) => {
@@ -152,10 +154,11 @@ function App() {
     setGameState(initializeGame(
       difficulty || gameState.difficulty,
       7,
-      spawnMode || gameState.spawnMode
+      spawnMode || gameState.spawnMode,
+      gameState.gameMode // Preserve current game mode
     ));
     setGameStarted(true);
-  }, [gameState.difficulty, gameState.spawnMode]);
+  }, [gameState.difficulty, gameState.spawnMode, gameState.gameMode]);
 
   const toggleSpawnMode = useCallback(() => {
     soundManager.playSettingsChange();
@@ -186,30 +189,72 @@ function App() {
           <h1 className="game-title">Block Stacker</h1>
           <h2 className="game-subtitle">Carnivale</h2>
 
-          <div className="start-buttons">
-            <button onClick={handleStartGame} className="start-button">
-              Start Game
-            </button>
-            <button onClick={() => setShowSettings(true)} className="settings-button">
-              Settings
-            </button>
-          </div>
+          {!showModeSelection ? (
+            <>
+              <div className="start-buttons">
+                <button onClick={() => setShowModeSelection(true)} className="start-button">
+                  Select Game Mode
+                </button>
+                <button onClick={() => setShowSettings(true)} className="settings-button">
+                  Settings
+                </button>
+              </div>
 
-          <div className="start-instructions">
-            <h3>How to Play</h3>
-            <ul>
-              <li>Tap screen or press <strong>SPACE</strong> to place blocks</li>
-              <li>Align blocks perfectly to keep them all</li>
-              <li>Misaligned blocks will be trimmed off</li>
-              <li>Reach row 11 for Minor Prize, row 15 for Major Prize</li>
-            </ul>
-            <p className="settings-hint">💡 Adjust difficulty and spawn mode in Settings</p>
-          </div>
+              <div className="start-instructions">
+                <h3>How to Play</h3>
+                <ul>
+                  <li>Tap screen or press <strong>SPACE</strong> to place blocks</li>
+                  <li>Align blocks perfectly to keep them all</li>
+                  <li>Misaligned blocks will be trimmed off</li>
+                  <li>Choose your game mode and challenge yourself!</li>
+                </ul>
+                <p className="settings-hint">💡 Adjust difficulty and spawn mode in Settings</p>
+              </div>
+            </>
+          ) : (
+            <div className="mode-selection">
+              <button onClick={() => setShowModeSelection(false)} className="back-button">
+                ← Back
+              </button>
+
+              <h2 className="mode-selection-title">Choose Your Mode</h2>
+
+              <div className="mode-grid">
+                {(Object.keys(MODE_CONFIGS) as GameMode[]).map((mode) => {
+                  const config = MODE_CONFIGS[mode];
+                  return (
+                    <div
+                      key={mode}
+                      className="mode-card"
+                      onClick={() => handleStartGame(mode)}
+                      style={{ borderColor: config.color }}
+                    >
+                      <div className="mode-icon" style={{ color: config.color }}>
+                        {config.icon}
+                      </div>
+                      <h3 className="mode-name">{config.name}</h3>
+                      <p className="mode-description">{config.description}</p>
+                      <div className="mode-features">
+                        {config.hasTimer && <span className="mode-badge">⏱️ Timed</span>}
+                        {config.hasPrizes && <span className="mode-badge">🎁 Prizes</span>}
+                        {!config.hasHeightLimit && <span className="mode-badge">∞ Endless</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <>
           <header>
             <h1>Block Stacker - Carnivale</h1>
+            <div className="mode-indicator">
+              <span className="mode-badge-gameplay" style={{ borderColor: MODE_CONFIGS[gameState.gameMode].color, color: MODE_CONFIGS[gameState.gameMode].color }}>
+                {MODE_CONFIGS[gameState.gameMode].icon} {MODE_CONFIGS[gameState.gameMode].name}
+              </span>
+            </div>
           </header>
 
           <div className="game-layout">

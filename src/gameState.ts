@@ -1,5 +1,8 @@
 // Core game state interfaces and types
 
+// Game Modes (Phase 3)
+export type GameMode = 'classic' | 'timeAttack' | 'endless' | 'challenge' | 'zen';
+
 export type Difficulty = 'easy' | 'normal' | 'arcade' | 'carnivale-30' | 'carnivale-25' | 'carnivale-20';
 export type Direction = 'left' | 'right';
 export type SpawnMode = 'reset-left' | 'resume'; // Reset to left edge vs continue from last position
@@ -103,6 +106,29 @@ export interface GameState {
   difficulty: Difficulty;
   alignmentTolerance: number; // How close blocks need to be to align (0.0-0.5)
   spawnMode: SpawnMode;       // How blocks spawn after placement
+
+  // Game Mode (Phase 3)
+  gameMode: GameMode;         // Current game mode
+
+  // Time Attack fields
+  timeRemaining: number | null; // Countdown timer (seconds), null if not Time Attack
+
+  // Endless Mode fields
+  cameraOffsetY: number;      // Camera Y offset for infinite height (pixels)
+  maxHeightReached: number;   // Highest row reached in Endless mode
+}
+
+// Mode Configuration (Phase 3)
+export interface ModeConfig {
+  name: string;
+  description: string;
+  hasTimer: boolean;          // Time Attack has timer
+  hasPrizes: boolean;         // Classic has prize system
+  hasHeightLimit: boolean;    // Classic limited to 15, Endless infinite
+  enablesSpeedIncrease: boolean; // Most modes increase speed, Zen doesn't
+  scoringType: 'standard' | 'time' | 'height'; // How score is calculated
+  icon: string;               // Emoji icon for mode card
+  color: string;              // Theme color for mode
 }
 
 export interface DifficultyConfig {
@@ -172,6 +198,65 @@ export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
   }
 };
 
+// Mode Configurations (Phase 3)
+export const MODE_CONFIGS: Record<GameMode, ModeConfig> = {
+  classic: {
+    name: 'Classic Mode',
+    description: 'Stack blocks to reach the Major Prize at row 15. Traditional carnival gameplay with minor and major prize milestones.',
+    hasTimer: false,
+    hasPrizes: true,
+    hasHeightLimit: true,
+    enablesSpeedIncrease: true,
+    scoringType: 'standard',
+    icon: '🎪',
+    color: '#00d9ff'
+  },
+  timeAttack: {
+    name: 'Time Attack',
+    description: 'Score as many points as possible in 60 seconds. Fast-paced action with no height limit. Beat the clock!',
+    hasTimer: true,
+    hasPrizes: false,
+    hasHeightLimit: false,
+    enablesSpeedIncrease: true,
+    scoringType: 'time',
+    icon: '⏱️',
+    color: '#ff6600'
+  },
+  endless: {
+    name: 'Endless Mode',
+    description: 'Stack blocks infinitely high. No prizes, no limits. How high can you go? Difficulty increases progressively.',
+    hasTimer: false,
+    hasPrizes: false,
+    hasHeightLimit: false,
+    enablesSpeedIncrease: true,
+    scoringType: 'height',
+    icon: '🚀',
+    color: '#9b59b6'
+  },
+  challenge: {
+    name: 'Challenge Mode',
+    description: 'Special constraints and unique rules. New challenges daily. Test your skills in creative ways.',
+    hasTimer: false,
+    hasPrizes: false,
+    hasHeightLimit: true,
+    enablesSpeedIncrease: true,
+    scoringType: 'standard',
+    icon: '🎯',
+    color: '#e74c3c'
+  },
+  zen: {
+    name: 'Zen Mode',
+    description: 'Relaxing, no-pressure gameplay. Slower speed, no time limits. Focus on perfect placements and enjoy the flow.',
+    hasTimer: false,
+    hasPrizes: false,
+    hasHeightLimit: false,
+    enablesSpeedIncrease: false,
+    scoringType: 'standard',
+    icon: '🧘',
+    color: '#27ae60'
+  }
+};
+
 // Timing calculations
 export function calculateOscillationTime(level: number, difficulty: Difficulty): number {
   const config = DIFFICULTIES[difficulty];
@@ -207,7 +292,8 @@ export function loadHighScore(): number {
 export function initializeGame(
   difficulty: Difficulty = 'carnivale-30',
   gridWidth: number = 7,
-  spawnMode: SpawnMode = 'resume'
+  spawnMode: SpawnMode = 'resume',
+  gameMode: GameMode = 'classic'
 ): GameState {
   // Start at row 0 (bottom of grid), level 0
   const initialMovingBlocks: Block[] = [
@@ -252,6 +338,16 @@ export function initializeGame(
     paused: false,
     difficulty: difficulty,
     alignmentTolerance: config.alignmentTolerance,
-    spawnMode: spawnMode
+    spawnMode: spawnMode,
+
+    // Game Mode (Phase 3)
+    gameMode: gameMode,
+
+    // Time Attack fields
+    timeRemaining: gameMode === 'timeAttack' ? 60 : null,
+
+    // Endless Mode fields
+    cameraOffsetY: 0,
+    maxHeightReached: 0
   };
 }
