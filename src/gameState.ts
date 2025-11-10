@@ -24,6 +24,17 @@ export interface SquashEffect {
   duration: number;         // Remaining duration in ms
 }
 
+export interface Particle {
+  x: number;                // X position in pixels
+  y: number;                // Y position in pixels
+  vx: number;               // X velocity in pixels/second
+  vy: number;               // Y velocity in pixels/second
+  color: string;            // Particle color
+  size: number;             // Particle size in pixels
+  lifetime: number;         // Remaining lifetime in ms
+  maxLifetime: number;      // Original lifetime for fade calculation
+}
+
 export interface GameState {
   // Grid configuration
   gridWidth: number;        // 7 for mobile, 11 for arcade
@@ -35,6 +46,7 @@ export interface GameState {
   movingBlocks: Block[];    // Blocks currently oscillating
   fallingBlocks: FallingBlock[]; // Blocks falling off (trimmed overhangs)
   squashEffects: SquashEffect[]; // Visual squash effects on block placement
+  particles: Particle[];    // Particle effects (bursts, celebrations)
 
   // Movement
   oscillationTime: number;  // Current oscillation duration (ms)
@@ -189,6 +201,7 @@ export function initializeGame(
     movingBlocks: initialMovingBlocks,
     fallingBlocks: [],
     squashEffects: [],
+    particles: [],
     oscillationTime: calculateOscillationTime(1, difficulty), // Still use 1 for speed calc
     direction: 'right',
     position: 0,

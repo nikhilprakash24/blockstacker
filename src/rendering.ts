@@ -1,4 +1,4 @@
-import { GameState, Block, FallingBlock, SquashEffect } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, Particle } from './gameState';
 
 const CELL_SIZE = 40; // pixels
 const GRID_MARGIN_LEFT = 120; // Space for prize labels on left
@@ -34,6 +34,11 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
   // Draw falling blocks (with opacity fade)
   state.fallingBlocks.forEach(fallingBlock => {
     drawFallingBlock(ctx, fallingBlock, state.gridHeight);
+  });
+
+  // Draw particles
+  state.particles.forEach(particle => {
+    drawParticle(ctx, particle);
   });
 
   // Draw prize indicators
@@ -132,6 +137,25 @@ function drawFallingBlock(ctx: CanvasRenderingContext2D, fallingBlock: FallingBl
   ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
 
   // Restore context state
+  ctx.restore();
+}
+
+function drawParticle(ctx: CanvasRenderingContext2D, particle: Particle): void {
+  ctx.save();
+
+  // Calculate opacity based on remaining lifetime
+  const opacity = particle.lifetime / particle.maxLifetime;
+  ctx.globalAlpha = opacity;
+
+  // Draw particle as a circle with glow
+  ctx.fillStyle = particle.color;
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = particle.color;
+
+  ctx.beginPath();
+  ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+  ctx.fill();
+
   ctx.restore();
 }
 

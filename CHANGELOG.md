@@ -26,6 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Squash effects applied via canvas transform
   - Multiple blocks can squash simultaneously
 
+- **Particle Burst System** (2025-11-10)
+  - Added `Particle` interface with position, velocity, color, size, lifetime
+  - Particle bursts spawn on perfect placements (no trimmed blocks)
+  - 12-30 particles depending on combo streak (more particles for higher combos)
+  - Particles use radial explosion pattern with random variations
+  - Cyan particles (#00ffff) for normal combos, gold (#ffd700) for 5+ combo streaks
+  - 800ms particle lifetime with fade-out effect
+  - Gravity applied to particles for natural arc trajectory
+  - 3-6 pixel particle size with 8px glow effect
+
 ### Changed
 - **Game Loop Enhancement** (2025-11-10)
   - `gameLoop()` now updates falling blocks even when game is over
@@ -43,15 +53,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `drawFallingBlock(ctx, fallingBlock, gridHeight)`: Renders falling block with opacity
   - `updateSquashEffects(state, deltaTime)`: Decreases squash intensity over time with ease-out
   - Modified `drawBlock(...)`: Now accepts optional squash parameter for scale transform
+  - `createParticleBurst(x, y, color, count)`: Spawns radial particle burst
+  - `updateParticles(state, deltaTime)`: Updates particle positions with physics
+  - `drawParticle(ctx, particle)`: Renders particles with fade and glow
 
 - **Module Exports** (2025-11-10)
-  - Exported `FallingBlock` and `SquashEffect` types from gameState.ts
+  - Exported `FallingBlock`, `SquashEffect`, and `Particle` types from gameState.ts
   - Imported in gameLoop.ts and rendering.ts
 
 - **Game State Updates** (2025-11-10)
   - Added `squashEffects: SquashEffect[]` to GameState
-  - `placeBlocks()` creates squash effects for newly placed blocks
-  - `gameLoop()` updates squash effects on every frame
+  - Added `particles: Particle[]` to GameState
+  - `placeBlocks()` creates squash effects and particles for aligned blocks
+  - `gameLoop()` updates all visual effects on every frame
+  - Particle count scales with combo streak (12 base + 3 per combo, max 30)
+  - Particle color changes to gold at 5+ combo streak
 
 ### Fixed
 - **Test Suite** (2025-11-10)

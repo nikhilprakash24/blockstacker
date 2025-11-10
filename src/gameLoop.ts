@@ -1,4 +1,54 @@
-import { GameState, Block, FallingBlock, SquashEffect, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, Particle, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+
+// Constants for rendering
+const CELL_SIZE = 40;
+const GRID_MARGIN_LEFT = 120;
+const GRID_MARGIN_TOP = 100;
+
+// Create particle burst at a specific position
+export function createParticleBurst(x: number, y: number, color: string, count: number): Particle[] {
+  const particles: Particle[] = [];
+  const lifetime = 800; // 800ms particle lifetime
+
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const speed = 100 + Math.random() * 100; // 100-200 pixels/second
+
+    particles.push({
+      x: x,
+      y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: color,
+      size: 3 + Math.random() * 3, // 3-6 pixels
+      lifetime: lifetime,
+      maxLifetime: lifetime
+    });
+  }
+
+  return particles;
+}
+
+// Update particles (movement, fade, remove dead)
+export function updateParticles(state: GameState, deltaTime: number): GameState {
+  const deltaSeconds = deltaTime / 1000;
+  const gravity = 200; // Particles fall slightly (pixels/s²)
+
+  const updatedParticles = state.particles
+    .map(p => ({
+      ...p,
+      x: p.x + p.vx * deltaSeconds,
+      y: p.y + p.vy * deltaSeconds,
+      vy: p.vy + gravity * deltaSeconds, // Apply gravity
+      lifetime: p.lifetime - deltaTime
+    }))
+    .filter(p => p.lifetime > 0);
+
+  return {
+    ...state,
+    particles: updatedParticles
+  };
+}
 
 // Update squash effects (decrease intensity over time)
 export function updateSquashEffects(state: GameState, deltaTime: number): GameState {
@@ -221,6 +271,20 @@ export function placeBlocks(state: GameState): GameState {
   // Calculate if this was a perfect placement
   const isPerfect = aligned.length === state.movingBlocks.length;
 
+  // Create particle burst for perfect placements
+  let newParticles: Particle[] = [];
+  if (isPerfect && aligned.length > 0) {
+    // Calculate center position of aligned blocks
+    const avgColumn = aligned.reduce((sum, b) => sum + b.column, 0) / aligned.length;
+    const pixelX = GRID_MARGIN_LEFT + avgColumn * CELL_SIZE + CELL_SIZE / 2;
+    const pixelY = GRID_MARGIN_TOP + (state.gridHeight - 1 - currentRow) * CELL_SIZE + CELL_SIZE / 2;
+
+    // Spawn particles based on combo streak (more particles for higher combos)
+    const particleCount = Math.min(12 + state.comboStreak * 3, 30);
+    const color = state.comboStreak > 5 ? '#ffd700' : '#00ffff'; // Gold for high combo, cyan otherwise
+    newParticles = createParticleBurst(pixelX, pixelY, color, particleCount);
+  }
+
   // --- NEW SCORING SYSTEM ---
   const config = DIFFICULTIES[state.difficulty];
 
@@ -275,6 +339,7 @@ export function placeBlocks(state: GameState): GameState {
     movingBlocks: newMovingBlocks,
     fallingBlocks: [...state.fallingBlocks, ...newFallingBlocks], // Add new falling blocks
     squashEffects: [...state.squashEffects, ...newSquashEffects], // Add new squash effects
+    particles: [...state.particles, ...newParticles], // Add new particles
     level: currentRow + 1,
     position: newPosition,
     score: newScore,
@@ -299,6 +364,7 @@ export function gameLoop(state: GameState): GameState {
   // Update visual effects (always update, even when game is over)
   updatedState = updateFallingBlocks(updatedState, deltaTime);
   updatedState = updateSquashEffects(updatedState, deltaTime);
+  updatedState = updateParticles(updatedState, deltaTime);
 
   // Only update block position if game is active
   if (!state.gameOver && !state.paused) {
