@@ -1,4 +1,4 @@
-import { GameState, Block, FallingBlock, SquashEffect, Particle, ScreenShake, ColorFlash, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, Particle, ScreenShake, ColorFlash, LevelUpEffect, calculateTimePerColumn, calculateOscillationTime, saveHighScore, DIFFICULTIES } from './gameState';
 
 // Constants for rendering
 const CELL_SIZE = 40;
@@ -155,6 +155,58 @@ export function updateSquashEffects(state: GameState, deltaTime: number): GameSt
   return {
     ...state,
     squashEffects: updatedSquashEffects
+  };
+}
+
+// Create level-up effect
+export function createLevelUpEffect(level: number): LevelUpEffect {
+  return {
+    level: level,
+    opacity: 1.0, // Start fully visible
+    scale: 0.5, // Start small, will grow
+    duration: 1200 // 1.2 second effect
+  };
+}
+
+// Update level-up effect (fade out and scale up)
+export function updateLevelUpEffect(state: GameState, deltaTime: number): GameState {
+  if (!state.levelUpEffect) {
+    return state;
+  }
+
+  const effect = state.levelUpEffect;
+  const newDuration = effect.duration - deltaTime;
+
+  // Effect finished
+  if (newDuration <= 0) {
+    return {
+      ...state,
+      levelUpEffect: null
+    };
+  }
+
+  // Progress through animation (0 at end, 1 at start)
+  const progress = newDuration / 1200;
+
+  // Scale up from 0.5 to 1.5 (ease-out cubic)
+  const easeProgress = 1 - progress;
+  const easedProgress = 1 - Math.pow(1 - easeProgress, 3);
+  const newScale = 0.5 + (easedProgress * 1.0); // 0.5 -> 1.5
+
+  // Fade out in last 30% of animation
+  let newOpacity = 1.0;
+  if (progress < 0.3) {
+    newOpacity = progress / 0.3; // Fade out
+  }
+
+  return {
+    ...state,
+    levelUpEffect: {
+      ...effect,
+      opacity: newOpacity,
+      scale: newScale,
+      duration: newDuration
+    }
   };
 }
 
@@ -379,6 +431,9 @@ export function placeBlocks(state: GameState): GameState {
   const shakeIntensity = Math.min(0.3 + (aligned.length / 10) + (state.comboStreak * 0.1), 1.0);
   const newScreenShake = createScreenShake(shakeIntensity);
 
+  // Create level-up effect (show the new level number)
+  const newLevelUpEffect = createLevelUpEffect(currentRow + 1);
+
   // --- NEW SCORING SYSTEM ---
   const config = DIFFICULTIES[state.difficulty];
 
@@ -448,8 +503,10 @@ export function placeBlocks(state: GameState): GameState {
     particles: [...state.particles, ...newParticles], // Add new particles
     screenShake: newScreenShake, // Add screen shake effect
     colorFlash: newColorFlash || state.colorFlash, // Add color flash if milestone reached
+    levelUpEffect: newLevelUpEffect, // Add level-up effect
     level: currentRow + 1,
     position: newPosition,
+    blockSpawnTime: newMovingBlocks.length > 0 ? Date.now() : state.blockSpawnTime, // Update spawn time when new blocks created
     score: newScore,
     perfectPlacements: isPerfect ? state.perfectPlacements + 1 : state.perfectPlacements,
     comboStreak: newComboStreak,
@@ -475,6 +532,7 @@ export function gameLoop(state: GameState): GameState {
   updatedState = updateParticles(updatedState, deltaTime);
   updatedState = updateScreenShake(updatedState, deltaTime);
   updatedState = updateColorFlash(updatedState, deltaTime);
+  updatedState = updateLevelUpEffect(updatedState, deltaTime);
 
   // Only update block position if game is active
   if (!state.gameOver && !state.paused) {

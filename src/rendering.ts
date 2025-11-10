@@ -1,4 +1,4 @@
-import { GameState, Block, FallingBlock, SquashEffect, Particle } from './gameState';
+import { GameState, Block, FallingBlock, SquashEffect, Particle, LevelUpEffect } from './gameState';
 
 const CELL_SIZE = 40; // pixels
 const GRID_MARGIN_LEFT = 120; // Space for prize labels on left
@@ -31,10 +31,15 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
     drawBlock(ctx, block, state.gridHeight, '#00d9ff', squash);
   });
 
-  // Draw moving blocks
+  // Draw moving blocks (with spawn animation)
+  // Calculate spawn progress (0-1 over 300ms)
+  const spawnDuration = 300; // ms
+  const spawnElapsed = Math.min(Date.now() - state.blockSpawnTime, spawnDuration);
+  const spawnProgress = spawnElapsed / spawnDuration; // 0 at start, 1 when complete
+
   state.movingBlocks.forEach((block) => {
     const x = state.position + block.column;
-    drawBlockAt(ctx, x, block.row, state.gridHeight, '#00ffff');
+    drawBlockAt(ctx, x, block.row, state.gridHeight, '#00ffff', spawnProgress);
   });
 
   // Draw falling blocks (with opacity fade)
@@ -66,6 +71,45 @@ export function render(state: GameState, ctx: CanvasRenderingContext2D): void {
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.restore();
   }
+
+  // Draw level-up effect (centered, scaled text)
+  if (state.levelUpEffect) {
+    drawLevelUpEffect(ctx, state.levelUpEffect);
+  }
+}
+
+function drawLevelUpEffect(ctx: CanvasRenderingContext2D, effect: LevelUpEffect): void {
+  ctx.save();
+
+  // Center of canvas
+  const centerX = ctx.canvas.width / 2;
+  const centerY = ctx.canvas.height / 2;
+
+  // Apply opacity
+  ctx.globalAlpha = effect.opacity;
+
+  // Apply scale transform
+  ctx.translate(centerX, centerY);
+  ctx.scale(effect.scale, effect.scale);
+  ctx.translate(-centerX, -centerY);
+
+  // Draw "LEVEL" text
+  ctx.font = 'bold 48px Arial';
+  ctx.fillStyle = '#00d9ff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = '#00d9ff';
+  ctx.fillText('LEVEL', centerX, centerY - 40);
+
+  // Draw level number
+  ctx.font = 'bold 96px Arial';
+  ctx.fillStyle = '#ffd700';
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur = 30;
+  ctx.fillText(effect.level.toString(), centerX, centerY + 40);
+
+  ctx.restore();
 }
 
 function drawGrid(ctx: CanvasRenderingContext2D, state: GameState): void {
@@ -116,9 +160,25 @@ function drawBlock(ctx: CanvasRenderingContext2D, block: Block, gridHeight: numb
   }
 }
 
-function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: number, gridHeight: number, color: string): void {
+function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: number, gridHeight: number, color: string, spawnProgress: number = 1.0): void {
   const x = GRID_MARGIN_LEFT + position * CELL_SIZE;
   const y = GRID_MARGIN_TOP + (gridHeight - 1 - row) * CELL_SIZE;
+
+  // Apply spawn animation (scale from 0.5 to 1.0, fade from 0 to 1)
+  const scale = 0.5 + (spawnProgress * 0.5); // 0.5 -> 1.0
+  const opacity = spawnProgress; // 0 -> 1
+
+  ctx.save();
+
+  // Apply spawn animation transform
+  if (spawnProgress < 1.0) {
+    const centerX = x + CELL_SIZE / 2;
+    const centerY = y + CELL_SIZE / 2;
+    ctx.globalAlpha = opacity;
+    ctx.translate(centerX, centerY);
+    ctx.scale(scale, scale);
+    ctx.translate(-centerX, -centerY);
+  }
 
   // Add glow effect for moving blocks
   ctx.shadowBlur = 15;
@@ -131,6 +191,8 @@ function drawBlockAt(ctx: CanvasRenderingContext2D, position: number, row: numbe
   ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+
+  ctx.restore();
 }
 
 function drawFallingBlock(ctx: CanvasRenderingContext2D, fallingBlock: FallingBlock, gridHeight: number): void {

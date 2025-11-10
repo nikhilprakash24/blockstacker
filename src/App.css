@@ -75,8 +75,13 @@ body {
 }
 
 .start-button:hover {
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 25px rgba(0, 217, 255, 0.7);
+}
+
+.start-button:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .settings-button {
@@ -86,8 +91,13 @@ body {
 }
 
 .settings-button:hover {
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.02);
   box-shadow: 0 8px 25px rgba(155, 89, 182, 0.7);
+}
+
+.settings-button:active {
+  transform: translateY(-1px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .start-instructions {
@@ -185,7 +195,12 @@ canvas {
 
 .control-btn:hover {
   background: #4a7ba7;
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.control-btn:active {
+  transform: translateY(0) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .place-button {
@@ -202,12 +217,13 @@ canvas {
 }
 
 .place-button:hover:not(:disabled) {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow: 0 6px 20px rgba(0, 217, 255, 0.6);
 }
 
 .place-button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .place-button:disabled {
@@ -259,6 +275,57 @@ canvas {
 .score-item strong {
   color: #00d9ff;
   font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+/* ===== DYNAMIC ANIMATIONS ===== */
+@keyframes comboPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+    color: #ffd700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes scoreIncrement {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    color: #00ffff;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.7);
+  }
+}
+
+/* CSS classes to trigger animations */
+.combo-pulse {
+  animation: comboPulse 0.4s ease-out;
+}
+
+.score-increment {
+  animation: scoreIncrement 0.3s ease-out;
+}
+
+.glow-pulse {
+  animation: glowPulse 1.5s ease-in-out infinite;
 }
 
 /* ===== SETTINGS MODAL ===== */
@@ -285,6 +352,18 @@ canvas {
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 0 50px rgba(0, 217, 255, 0.5);
+  animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .settings-content h2 {
@@ -465,6 +544,18 @@ canvas {
   box-shadow: 0 0 50px rgba(0, 217, 255, 0.5);
   z-index: 10;
   min-width: 300px;
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .prize-prompt h2,

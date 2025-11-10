@@ -48,6 +48,13 @@ export interface ColorFlash {
   duration: number;         // Remaining duration in ms
 }
 
+export interface LevelUpEffect {
+  level: number;            // Level number to display
+  opacity: number;          // Current opacity (0-1)
+  scale: number;            // Current scale (for zoom effect)
+  duration: number;         // Remaining duration in ms
+}
+
 export interface GameState {
   // Grid configuration
   gridWidth: number;        // 7 for mobile, 11 for arcade
@@ -62,6 +69,7 @@ export interface GameState {
   particles: Particle[];    // Particle effects (bursts, celebrations)
   screenShake: ScreenShake | null; // Camera shake effect
   colorFlash: ColorFlash | null; // Screen color flash effect
+  levelUpEffect: LevelUpEffect | null; // Level-up transition effect
 
   // Movement
   oscillationTime: number;  // Current oscillation duration (ms)
@@ -72,6 +80,7 @@ export interface GameState {
   lastUpdate: number;       // Timestamp of last frame
   pressTime: number;        // When button was pressed
   continueTime: number;     // When continue was pressed from prize screen
+  blockSpawnTime: number;   // When current moving blocks were spawned (for spawn animation)
 
   // Scoring
   score: number;
@@ -219,12 +228,14 @@ export function initializeGame(
     particles: [],
     screenShake: null,
     colorFlash: null,
+    levelUpEffect: null,
     oscillationTime: calculateOscillationTime(1, difficulty), // Still use 1 for speed calc
     direction: 'right',
     position: 0,
     lastUpdate: Date.now(),
     pressTime: 0,
     continueTime: 0,
+    blockSpawnTime: Date.now(), // Blocks spawn immediately at game start
     score: 0,
     highScore: loadHighScore(),
     perfectPlacements: 0,
